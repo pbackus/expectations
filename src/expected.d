@@ -17,6 +17,7 @@ module expected;
  * be produced.
  */
 struct Expected(T)
+	if (!is(T == Exception))
 {
 private:
 
