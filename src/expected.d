@@ -1,5 +1,5 @@
 /++
-Error handling that combines exceptions and return codes.
+A wrapper type for treating exceptions as values.
 
 The design of this module is based on C++'s proposed
 [`std::expected`](https://wg21.link/p0323), and is also similar to Rust's
