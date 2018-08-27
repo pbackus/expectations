@@ -1,0 +1,12 @@
+{
+	"name": "expected",
+	"authors": [
+		"Paul Backus"
+	],
+	"dependencies": {
+		"sumtype": "~>0.5.3"
+	},
+	"description": "Error handling that combines exceptions and return codes",
+	"copyright": "Copyright © 2018, Paul Backus",
+	"license": "MIT"
+}
