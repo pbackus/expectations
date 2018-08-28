@@ -3,6 +3,19 @@ expected
 
 A wrapper type that bundles exceptions with return values
 
+Documentation
+-------------
+
+[View online on Github Pages.][docs]
+
+`expected` uses [adrdox][] to generate its documentation. To build your own
+copy, run the following command from the root of the `sumtype` repository:
+
+    path/to/adrdox/doc2 --genSearchIndex --genSource -o generated-docs src
+
+[docs]: https://pbackus.github.io/expected/expected.html
+[adrdox]: https://github.com/adamdruppe/adrdox
+
 Example
 -------
 
