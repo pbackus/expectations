@@ -14,23 +14,23 @@ module expected;
 
 /// Basic Usage
 unittest {
-	import std.math: approxEqual;
-	import std.exception: assertThrown;
+    import std.math: approxEqual;
+    import std.exception: assertThrown;
 
-	Expected!double relative(double a, double b)
-	{
-		if (a == 0) {
-			return unexpected!double(
-				new Exception("Division by zero")
-			);
-		} else {
-			return expected((b - a)/a);
-		}
-	}
+    Expected!double relative(double a, double b)
+    {
+        if (a == 0) {
+            return unexpected!double(
+                new Exception("Division by zero")
+            );
+        } else {
+            return expected((b - a)/a);
+        }
+    }
 
-	assert(relative(2.0, 3.0).value.approxEqual(0.5));
-	assert(relative(0.0, 1.0).hasValue == false);
-	assertThrown(relative(0.0, 1.0).value);
+    assert(relative(2.0, 3.0).value.approxEqual(0.5));
+    assert(relative(0.0, 1.0).hasValue == false);
+    assertThrown(relative(0.0, 1.0).value);
 }
 
 /**
