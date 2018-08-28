@@ -121,8 +121,8 @@ public:
 
 	/// Returns the contained error.
 	Exception error()
-		in(!hasValue)
 	{
+		scope(failure) assert(false);
 		return data.tryMatch!(
 			(Exception err) => err
 		);
