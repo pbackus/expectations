@@ -215,3 +215,26 @@ unittest {
 	assert(x.valueOr(456) == 123);
 	assert(y.valueOr(456) == 456);
 }
+
+/// Creates an `Expected` object from a value, with type inference
+Expected!T expected(T)(T value)
+{
+	return Expected!T(value);
+}
+
+unittest {
+	assert(__traits(compiles, expected(123)));
+	assert(is(typeof(expected(123)) == Expected!int));
+}
+
+/// Creates an `Expected` object from an exception
+Expected!T unexpected(T)(Exception err)
+{
+	return Expected!T(err);
+}
+
+unittest {
+	Exception e = new Exception("oops");
+	assert(__traits(compiles, unexpected!int(e)));
+	assert(is(typeof(unexpected!int(e)) == Expected!int));
+}
