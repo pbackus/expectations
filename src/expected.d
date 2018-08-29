@@ -113,19 +113,23 @@ public:
 	/// exception if there isn't.
 	T value()
 	{
-		scope(failure) throw error;
-		return data.tryMatch!(
-			(T value) => value
+		T* valuePtr = data.match!(
+			(ref T value) => &value,
+			(Exception _) => null
 		);
+		if (valuePtr is null) throw error;
+		else return *valuePtr;
 	}
 
 	/// Returns the contained error.
 	Exception error()
 	{
-		scope(failure) assert(false);
-		return data.tryMatch!(
+		Exception err = data.match!(
+			(T _) => null,
 			(Exception err) => err
 		);
+		assert(err !is null, "called `error` when `hasValue == true`");
+		return err;
 	}
 
 	/// Returns the contained value if there is one, or a default value if
