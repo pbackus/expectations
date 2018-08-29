@@ -16,6 +16,7 @@ module expected;
 unittest {
     import std.math: approxEqual;
     import std.exception: assertThrown;
+    import std.algorithm: equal;
 
     Expected!double relative(double a, double b)
     {
@@ -28,9 +29,12 @@ unittest {
         }
     }
 
-    assert(relative(2.0, 3.0).value.approxEqual(0.5));
-    assert(relative(0.0, 1.0).hasValue == false);
-    assertThrown(relative(0.0, 1.0).value);
+    assert(relative(2, 3).hasValue);
+    assert(relative(2, 3).value.approxEqual(0.5));
+
+    assert(!relative(0, 1).hasValue);
+    assertThrown(relative(0, 1).value);
+    assert(relative(0, 1).error.msg.equal("Division by zero"));
 }
 
 /**
