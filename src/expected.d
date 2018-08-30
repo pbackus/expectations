@@ -162,20 +162,6 @@ public:
 		assert(err !is null, "called `error` when `hasValue == true`");
 		return err;
 	}
-
-	/**
-	 * Returns the contained value if there is one, or a default value if
-	 * there isn't.
-	 *
-	 * Not defined for `Expected!void`.
-	 */
-	T valueOr(T defaultValue)
-	{
-		return data.match!(
-			(T value) => value,
-			(Exception _) => defaultValue
-		);
-	}
 }
 
 /// ditto
@@ -331,15 +317,6 @@ unittest {
 	assert(y.error == e);
 }
 
-// valueOr
-unittest {
-	Expected!int x = 123;
-	Expected!int y = new Exception("oops");
-
-	assert(x.valueOr(456) == 123);
-	assert(y.valueOr(456) == 456);
-}
-
 // Expected!void: construction
 unittest {
 	assert(__traits(compiles, Expected!void()));
@@ -442,4 +419,29 @@ unittest {
 	Exception e = new Exception("oops");
 	assert(__traits(compiles, unexpected!int(e)));
 	assert(is(typeof(unexpected!int(e)) == Expected!int));
+}
+
+/**
+ * Returns the contained value if there is one, or a default value if
+ * there isn't.
+ *
+ * Not defined for `Expected!void`.
+ */
+T valueOr(T)(Expected!T self, T defaultValue)
+	if(!is(T == void))
+{
+	import sumtype: match;
+
+	return self.data.match!(
+		(T value) => value,
+		(Exception _) => defaultValue
+	);
+}
+
+unittest {
+	Expected!int x = 123;
+	Expected!int y = new Exception("oops");
+
+	assert(x.valueOr(456) == 123);
+	assert(y.valueOr(456) == 456);
 }
