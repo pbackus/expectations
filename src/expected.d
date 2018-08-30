@@ -2,8 +2,8 @@
 A wrapper type that bundles exceptions with return values.
 
 The design of this module is based on C++'s proposed
-[`std::expected`](https://wg21.link/p0323), and is also similar to Rust's
-[`std::result`](https://doc.rust-lang.org/std/result/). See
+[std::expected](https://wg21.link/p0323), and is also similar to Rust's
+[std::result](https://doc.rust-lang.org/std/result/). See
 ["Expect the Expected"](https://ndcoslo.com/talk/expect-the-expected/) by
 Andrei Alexandrescu for further background.
 
@@ -12,7 +12,7 @@ Author: Paul Backus
 +/
 module expected;
 
-/// Basic Usage
+/// $(H3 Basic Usage)
 unittest {
     import std.math: approxEqual;
     import std.exception: assertThrown;
@@ -442,8 +442,7 @@ unittest {
 }
 
 /**
- * Returns the contained value if there is one, or a default value if
- * there isn't.
+ * Returns the expected value if present, or a default value otherwise.
  *
  * Not defined for `Expected!void`.
  */
