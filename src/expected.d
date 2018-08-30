@@ -400,8 +400,11 @@ unittest {
 
 /**
  * Creates an `Expected` object from a value, with type inference.
+ *
+ * Not defined for `Expected!void`.
  */
 Expected!T expected(T)(T value)
+	if(!is(T == void))
 {
 	return Expected!T(value);
 }
