@@ -10,7 +10,7 @@ Andrei Alexandrescu for further background.
 License: MIT
 Author: Paul Backus
 +/
-module expected;
+module expectations;
 
 /// $(H3 Basic Usage)
 unittest {
