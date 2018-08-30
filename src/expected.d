@@ -398,7 +398,9 @@ unittest {
 	assert(y.error == e);
 }
 
-/// Creates an `Expected` object from a value, with type inference
+/**
+ * Creates an `Expected` object from a value, with type inference.
+ */
 Expected!T expected(T)(T value)
 {
 	return Expected!T(value);
@@ -409,7 +411,9 @@ unittest {
 	assert(is(typeof(expected(123)) == Expected!int));
 }
 
-/// Creates an `Expected` object from an exception
+/**
+ * Creates an `Expected` object from an exception.
+ */
 Expected!T unexpected(T)(Exception err)
 {
 	return Expected!T(err);
