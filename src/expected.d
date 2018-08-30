@@ -130,7 +130,7 @@ public:
 	bool hasValue()
 	{
 		return data.match!(
-			(T value) => true,
+			(T _) => true,
 			(Exception _) => false
 		);
 	}
