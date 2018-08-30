@@ -1,7 +1,7 @@
 expected
 ========
 
-A wrapper type that bundles exceptions with return values
+Error handling that bundles exceptions with return values
 
 Documentation
 -------------

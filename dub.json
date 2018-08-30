@@ -6,7 +6,7 @@
 	"dependencies": {
 		"sumtype": "~>0.5.3"
 	},
-	"description": "A wrapper type that bundles exceptions with return values",
+	"description": "Error handling that bundles exceptions with return values",
 	"copyright": "Copyright © 2018, Paul Backus",
 	"license": "MIT"
 }
