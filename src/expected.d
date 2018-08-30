@@ -52,31 +52,47 @@ private:
 
 public:
 
-	/// Constructs an `Expected!T` with a value.
+	/**
+	 * Constructs an `Expected!T` with a value.
+	 *
+	 * Not defined for `Expected!void`.
+	 */
 	this(T value)
 	{
 		data = value;
 	}
 
-	/// Constructs an `Expected!T` with an exception.
+	/**
+	 * Constructs an `Expected!T` with an exception.
+	 */
 	this(Exception err)
 	{
 		data = err;
 	}
 
-	/// Assigns a value to an `Expected!T`.
+	/**
+	 * Assigns a value to an `Expected!T`.
+	 *
+	 * Not defined for `Expected!void`.
+	 */
 	void opAssign(T value)
 	{
 		data = value;
 	}
 
-	/// Assigns an exception to an `Expected!T`.
+	/**
+	 * Assigns an exception to an `Expected!T`.
+	 */
 	void opAssign(Exception err)
 	{
 		data = err;
 	}
 
-	/// Checks whether this `Expected!T` contains a specific value.
+	/**
+	 * Checks whether this `Expected!T` contains a specific value.
+	 *
+	 * Not defined for `Expected!void`.
+	 */
 	bool opEquals(T rhs)
 	{
 		return data.match!(
@@ -85,7 +101,9 @@ public:
 		);
 	}
 
-	/// Checks whether this `Expected!T` contains a specific exception.
+	/**
+	 * Checks whether this `Expected!T` contains a specific exception.
+	 */
 	bool opEquals(Exception rhs)
 	{
 		return data.match!(
@@ -94,8 +112,10 @@ public:
 		);
 	}
 
-	/// Checks whether this `Expected!T` and `rhs` contain the same value or
-	/// exception.
+	/**
+	 * Checks whether this `Expected!T` and `rhs` contain the same value or
+	 * exception.
+	 */
 	bool opEquals(Expected!T rhs)
 	{
 		return data.match!(
@@ -104,7 +124,9 @@ public:
 		);
 	}
 
-	/// Checks whether this `Expected!T` contains a `T` value.
+	/**
+	 * Checks whether this `Expected!T` contains a `T` value.
+	 */
 	bool hasValue()
 	{
 		return data.match!(
@@ -113,8 +135,10 @@ public:
 		);
 	}
 
-	/// Returns the contained value if there is one, or throws the contained
-	/// exception if there isn't.
+	/**
+	 * Returns the contained value if there is one, or throws the contained
+	 * exception if there isn't.
+	 */
 	T value()
 	{
 		T* valuePtr = data.match!(
@@ -125,7 +149,10 @@ public:
 		else return *valuePtr;
 	}
 
-	/// Returns the contained error.
+	/**
+	 * Returns the contained error. May only be called when `hasValue` returns
+	 * `false`.
+	 */
 	Exception error()
 	{
 		Exception err = data.match!(
@@ -136,14 +163,82 @@ public:
 		return err;
 	}
 
-	/// Returns the contained value if there is one, or a default value if
-	/// there isn't.
+	/**
+	 * Returns the contained value if there is one, or a default value if
+	 * there isn't.
+	 *
+	 * Not defined for `Expected!void`.
+	 */
 	T valueOr(T defaultValue)
 	{
 		return data.match!(
 			(T value) => value,
 			(Exception _) => defaultValue
 		);
+	}
+}
+
+/// ditto
+struct Expected(T : void)
+{
+private:
+
+	import sumtype;
+
+	struct Void {}
+
+	SumType!(Void, Exception) data;
+
+public:
+
+	this(Exception err)
+	{
+		data = err;
+	}
+
+	void opAssign(Exception err)
+	{
+		data = err;
+	}
+
+	bool opEquals(Exception rhs)
+	{
+		return data.match!(
+			(Void _) => false,
+			(Exception err) => err == rhs
+		);
+	}
+
+	bool opEquals(Expected!T rhs)
+	{
+		return data.match!(
+			(Void _) => rhs.hasValue,
+			(Exception err) => rhs == err
+		);
+	}
+
+	bool hasValue()
+	{
+		return data.match!(
+			(Void _) => true,
+			(Exception _) => false
+		);
+	}
+
+	T value()
+	{
+		if (hasValue) return;
+		else throw error;
+	}
+
+	Exception error()
+	{
+		Exception err = data.match!(
+			(Void _) => null,
+			(Exception err) => err
+		);
+		assert(err !is null, "called `error` when `hasValue == true`");
+		return err;
 	}
 }
 
@@ -243,6 +338,87 @@ unittest {
 
 	assert(x.valueOr(456) == 123);
 	assert(y.valueOr(456) == 456);
+}
+
+// Expected!void: construction
+unittest {
+	assert(__traits(compiles, Expected!void()));
+	assert(__traits(compiles, Expected!void(new Exception("oops"))));
+}
+
+// Expected!void: assignment
+unittest {
+	Expected!void x;
+
+	assert(__traits(compiles, x = new Exception("oops")));
+}
+
+// Expected!void: self-assignment
+unittest {
+	Expected!void x, y;
+
+	assert(__traits(compiles, x = y));
+}
+
+// Expected!void: equality with self
+unittest {
+	Exception e = new Exception("oops");
+
+	Expected!void x;
+	Expected!void y;
+	Expected!void z = e;
+	Expected!void w = e;
+
+	assert(x == y);
+	assert(z == w);
+	assert(x != z);
+	assert(z != x);
+}
+
+// Expected!void: equality with Exception
+unittest {
+	Exception e = new Exception("oops");
+
+	Expected!void x = e;
+
+	assert(x == e);
+	assert(x != new Exception("oh no"));
+}
+
+// Expected!void: hasValue
+unittest {
+	Expected!void x;
+	Expected!void y = new Exception("oops");
+
+	assert(x.hasValue);
+	assert(!y.hasValue);
+}
+
+// Expected!void: value
+unittest {
+	import std.exception: assertNotThrown, collectException;
+
+	Exception e = new Exception("oops");
+
+	Expected!void x;
+	Expected!void y = e;
+
+	assertNotThrown(x.value);
+	assert(collectException(y.value) == e);
+}
+
+// Expected!void: error
+unittest {
+	import std.exception: assertThrown;
+	import core.exception: AssertError;
+
+	Exception e = new Exception("oops");
+
+	Expected!void x;
+	Expected!void y = e;
+
+	assertThrown!AssertError(x.error);
+	assert(y.error == e);
 }
 
 /// Creates an `Expected` object from a value, with type inference
