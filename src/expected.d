@@ -430,12 +430,8 @@ unittest {
 T valueOr(T)(Expected!T self, T defaultValue)
 	if(!is(T == void))
 {
-	import sumtype: match;
-
-	return self.data.match!(
-		(T value) => value,
-		(Exception _) => defaultValue
-	);
+	if (self.hasValue) return self.value;
+	else return defaultValue;
 }
 
 unittest {
