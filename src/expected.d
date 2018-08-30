@@ -415,6 +415,19 @@ unittest {
 }
 
 /**
+ * Creates an `Expected!void` object representing a successful outcome.
+ */
+Expected!T expected(T : void)()
+{
+	return Expected!void();
+}
+
+unittest {
+	assert(__traits(compiles, expected!void));
+	assert(is(typeof({ return expected!void; }()) == Expected!void));
+}
+
+/**
  * Creates an `Expected` object from an exception.
  */
 Expected!T unexpected(T)(Exception err)
