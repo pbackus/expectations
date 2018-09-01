@@ -141,12 +141,10 @@ public:
 	 */
 	T value()
 	{
-		T* valuePtr = data.match!(
-			(ref T value) => &value,
-			(Exception _) => null
+		scope(failure) throw error;
+		return data.tryMatch!(
+			(T value) => value,
 		);
-		if (valuePtr is null) throw error;
-		else return *valuePtr;
 	}
 
 	/**
@@ -155,12 +153,10 @@ public:
 	 */
 	Exception error()
 	{
-		Exception err = data.match!(
-			(T _) => null,
+		scope(failure) assert(false);
+		return data.tryMatch!(
 			(Exception err) => err
 		);
-		assert(err !is null, "called `error` when `hasValue == true`");
-		return err;
 	}
 }
 
@@ -213,18 +209,18 @@ public:
 
 	T value()
 	{
-		if (hasValue) return;
-		else throw error;
+		scope(failure) throw error;
+		data.tryMatch!(
+			(Void _) { return; },
+		);
 	}
 
 	Exception error()
 	{
-		Exception err = data.match!(
-			(Void _) => null,
+		scope(failure) assert(false);
+		return data.tryMatch!(
 			(Exception err) => err
 		);
-		assert(err !is null, "called `error` when `hasValue == true`");
-		return err;
 	}
 }
 
