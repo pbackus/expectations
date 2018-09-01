@@ -136,8 +136,8 @@ public:
 	}
 
 	/**
-	 * Returns the contained value if there is one, or throws the contained
-	 * exception if there isn't.
+	 * Returns the contained value if there is one. Otherwise, throws the
+	 * contained exception.
 	 */
 	T value()
 	{
