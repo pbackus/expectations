@@ -4,7 +4,7 @@
 		"Paul Backus"
 	],
 	"dependencies": {
-		"sumtype": "~>0.5.3"
+		"sumtype": "~>0.6.0"
 	},
 	"description": "Error handling that bundles exceptions with return values",
 	"copyright": "Copyright © 2018, Paul Backus",
