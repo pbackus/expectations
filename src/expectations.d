@@ -568,9 +568,11 @@ auto andThen(alias fun, T)(Expected!T self)
 {
 	import sumtype: match;
 
+	alias ExpectedU = typeof(fun(self.value));
+
 	return self.data.match!(
 		(T value) => fun(value),
-		(Exception err) => typeof(fun(self.value))(err)
+		(Exception err) => ExpectedU(err)
 	);
 }
 
@@ -606,9 +608,11 @@ auto andThen(alias fun, T : void)(Expected!T self)
 {
 	import sumtype: match;
 
+	alias ExpectedU = typeof(fun());
+
 	return self.data.match!(
 		(self.Void _) => fun(),
-		(Exception err) => typeof(fun())(err)
+		(Exception err) => ExpectedU(err)
 	);
 }
 
