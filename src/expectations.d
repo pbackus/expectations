@@ -225,13 +225,13 @@ public:
 }
 
 // Construction
-@safe unittest {
+@safe nothrow unittest {
 	assert(__traits(compiles, Expected!int(123)));
 	assert(__traits(compiles, Expected!int(new Exception("oops"))));
 }
 
 // Assignment
-@safe unittest {
+@safe nothrow unittest {
 	Expected!int x;
 
 	assert(__traits(compiles, x = 123));
@@ -239,7 +239,7 @@ public:
 }
 
 // Self assignment
-@safe unittest {
+@safe nothrow unittest {
 	Expected!int x, y;
 
 	assert(__traits(compiles, x = y));
@@ -281,7 +281,7 @@ public:
 }
 
 // hasValue
-@safe unittest {
+@safe nothrow unittest {
 	Expected!int x = 123;
 	Expected!int y = new Exception("oops");
 
@@ -317,20 +317,20 @@ public:
 }
 
 // Expected!void: construction
-@safe unittest {
+@safe nothrow unittest {
 	assert(__traits(compiles, Expected!void()));
 	assert(__traits(compiles, Expected!void(new Exception("oops"))));
 }
 
 // Expected!void: assignment
-@safe unittest {
+@safe nothrow unittest {
 	Expected!void x;
 
 	assert(__traits(compiles, x = new Exception("oops")));
 }
 
 // Expected!void: self-assignment
-@safe unittest {
+@safe nothrow unittest {
 	Expected!void x, y;
 
 	assert(__traits(compiles, x = y));
@@ -362,7 +362,7 @@ public:
 }
 
 // Expected!void: hasValue
-@safe unittest {
+@safe nothrow unittest {
 	Expected!void x;
 	Expected!void y = new Exception("oops");
 
@@ -408,7 +408,7 @@ Expected!T expected(T)(T value)
 	return Expected!T(value);
 }
 
-@safe unittest {
+@safe nothrow unittest {
 	assert(__traits(compiles, expected(123)));
 	assert(is(typeof(expected(123)) == Expected!int));
 }
@@ -421,7 +421,7 @@ Expected!T expected(T : void)()
 	return Expected!void();
 }
 
-@safe unittest {
+@safe nothrow unittest {
 	assert(__traits(compiles, expected!void));
 	assert(is(typeof({ return expected!void; }()) == Expected!void));
 }
@@ -434,7 +434,7 @@ Expected!T unexpected(T)(Exception err)
 	return Expected!T(err);
 }
 
-@safe unittest {
+@safe nothrow unittest {
 	Exception e = new Exception("oops");
 	assert(__traits(compiles, unexpected!int(e)));
 	assert(is(typeof(unexpected!int(e)) == Expected!int));
