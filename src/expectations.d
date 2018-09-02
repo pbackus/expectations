@@ -2,7 +2,7 @@
 Error handling that bundles exceptions with return values.
 
 The design of this module is based on C++'s proposed
-[std::expected](https://wg21.link/p0323), and is also similar to Rust's
+[std::expected](https://wg21.link/p0323) and Rust's
 [std::result](https://doc.rust-lang.org/std/result/). See
 ["Expect the Expected"](https://www.youtube.com/watch?v=nVzgkepAg5Y) by
 Andrei Alexandrescu for further background.
