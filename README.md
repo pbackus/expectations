@@ -1,7 +1,7 @@
 expectations
 ============
 
-Error handling that bundles exceptions with return values
+Error handling that bundles exceptions with return values.
 
 Features
 --------
