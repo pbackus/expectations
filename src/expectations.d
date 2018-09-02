@@ -152,6 +152,7 @@ public:
 	 * returns `false`.
 	 */
 	Exception exception()
+		in(!hasValue)
 	{
 		scope(failure) assert(false);
 		return data.tryMatch!(
@@ -216,6 +217,7 @@ public:
 	}
 
 	Exception exception()
+		in(!hasValue)
 	{
 		scope(failure) assert(false);
 		return data.tryMatch!(
