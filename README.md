@@ -40,3 +40,13 @@ Example
     assert(!relative(0, 1).hasValue);
     assertThrown(relative(0, 1).value);
     assert(relative(0, 1).exception.msg.equal("Division by zero"));
+
+Installation
+------------
+
+If you're using dub, add the
+[expectations](https://code.dlang.org/packages/expectations) package to your
+project as a dependency.
+
+Otherwise, you will need to add both `expectations.d` and `sumtype.d` (from
+[sumtype](https://github.com/pbackus/sumtype)) to your source directory.
