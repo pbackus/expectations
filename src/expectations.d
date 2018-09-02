@@ -172,97 +172,6 @@ public:
 			(Exception _) => defaultValue
 		);
 	}
-
-	/**
-	 * Applies a function to the contained value, if present. Otherwise,
-	 * propagates the contained exception.
-	 */
-	auto map(alias fun)()
-		if (is(typeof(fun(value))))
-	{
-		alias U = typeof(fun(value));
-
-		return data.match!(
-			(T value) => expected(fun(value)),
-			(Exception err) => unexpected!U(err)
-		);
-	}
-}
-
-/// ditto
-struct Expected(T : void)
-{
-private:
-
-	import sumtype;
-
-	struct Void {}
-
-	SumType!(Void, Exception) data;
-
-public:
-
-	this(Exception err)
-	{
-		data = err;
-	}
-
-	void opAssign(Exception err)
-	{
-		data = err;
-	}
-
-	bool opEquals(Exception rhs)
-	{
-		return data.match!(
-			(Void _) => false,
-			(Exception err) => err == rhs
-		);
-	}
-
-	bool opEquals(Expected!T rhs)
-	{
-		return data.match!(
-			(Void _) => rhs.hasValue,
-			(Exception err) => rhs == err
-		);
-	}
-
-	bool hasValue()
-	{
-		return data.match!(
-			(Void _) => true,
-			(Exception _) => false
-		);
-	}
-
-	T value()
-	{
-		scope(failure) throw exception;
-		data.tryMatch!(
-			(Void _) { return; },
-		);
-	}
-
-	Exception exception()
-		in(!hasValue)
-	{
-		scope(failure) assert(false);
-		return data.tryMatch!(
-			(Exception err) => err
-		);
-	}
-
-	auto map(alias fun)()
-		if (is(typeof(fun())))
-	{
-		alias U = typeof(fun());
-
-		return data.match!(
-			(Void _) => expected(fun()),
-			(Exception err) => unexpected!U(err)
-		);
-	}
 }
 
 // Construction
@@ -366,23 +275,100 @@ public:
 	assert(y.valueOr(456) == 456);
 }
 
-// map
-@system unittest {
-	import std.math: approxEqual;
+/**
+ * Specialization of `Expected` for `void`.
+ *
+ * Methods of `Expected` that require a value of the expected type
+ * are either missing from this specialization, or have been modified to not
+ * require such a value. If you are writing generic code that uses `Expected`,
+ * you will likely need to treat `Expected!void` as a special case.
+ */
+struct Expected(T : void)
+{
+private:
 
-	Exception e = new Exception("oops");
+	import sumtype;
 
-	Expected!int x = 123;
-	Expected!int y = e;
+	struct Void {}
 
-	alias f = (int n) => n / 2.0;
+	SumType!(Void, Exception) data;
 
-	assert(__traits(compiles, () @safe nothrow {
-		x.map!f;
-	}));
+public:
 
-	() @safe { assert(x.map!f.value.approxEqual(61.5)); }();
-	assert(y.map!f.exception == e);
+	/**
+	 * Constructs an `Expected!void` with an exception.
+	 */
+	this(Exception err)
+	{
+		data = err;
+	}
+
+	/**
+	 * Assigns an exception to an `Expected!void`.
+	 */
+	void opAssign(Exception err)
+	{
+		data = err;
+	}
+
+	/**
+	 * Checks whether this `Expected!void` contains a specific exception.
+	 */
+	bool opEquals(Exception rhs)
+	{
+		return data.match!(
+			(Void _) => false,
+			(Exception err) => err == rhs
+		);
+	}
+
+	/**
+	 * True if this `Expected!void` and `rhs` both contain the same exception,
+	 * or neither contains an exception.
+	 */
+	bool opEquals(Expected!T rhs)
+	{
+		return data.match!(
+			(Void _) => rhs.hasValue,
+			(Exception err) => rhs == err
+		);
+	}
+
+	/**
+	 * Checks whether this `Expected!void` contains no exception.
+	 */
+	bool hasValue()
+	{
+		return data.match!(
+			(Void _) => true,
+			(Exception _) => false
+		);
+	}
+
+	/**
+	 * Returns normally if this `Expected!void` does not contain an exception.
+	 * Otherwise, throws the contained exception.
+	 */
+	T value()
+	{
+		scope(failure) throw exception;
+		data.tryMatch!(
+			(Void _) { return; },
+		);
+	}
+
+	/**
+	 * Returns the contained exception. May only be called when `hasValue`
+	 * returns `false`.
+	 */
+	Exception exception()
+		in(!hasValue)
+	{
+		scope(failure) assert(false);
+		return data.tryMatch!(
+			(Exception err) => err
+		);
+	}
 }
 
 // Expected!void: construction
@@ -466,23 +452,6 @@ public:
 	assert(y.exception == e);
 }
 
-// Expected!void: map
-@system unittest {
-	Exception e = new Exception("oops");
-
-	Expected!void x;
-	Expected!void y = e;
-
-	alias f = function () { return 123; };
-
-	assert(__traits(compiles, () @safe nothrow {
-		x.map!f;
-	}));
-
-	() @safe { assert(x.map!f.value == 123); }();
-	assert(y.map!f.exception == e);
-}
-
 /**
  * Creates an `Expected` object from a value, with type inference.
  *
@@ -524,4 +493,150 @@ Expected!T unexpected(T)(Exception err)
 	Exception e = new Exception("oops");
 	assert(__traits(compiles, unexpected!int(e)));
 	assert(is(typeof(unexpected!int(e)) == Expected!int));
+}
+
+/**
+ * Applies a function to the contained value, if present, and wraps the result
+ * in a new `Expected` object. If no value is present, wraps the contained
+ * exception in a new `Expected` object instead.
+ */
+auto map(alias fun, T)(Expected!T self)
+	if (is(typeof(fun(self.value))))
+{
+	import sumtype: match;
+
+	alias U = typeof(fun(self.value));
+
+	return self.data.match!(
+		(T value) => expected(fun(value)),
+		(Exception err) => unexpected!U(err)
+	);
+}
+
+@system unittest {
+	import std.math: approxEqual;
+
+	Exception e = new Exception("oops");
+
+	Expected!int x = 123;
+	Expected!int y = e;
+
+	double half(int n) { return n / 2.0; }
+
+	assert(__traits(compiles, () @safe nothrow {
+		x.map!half;
+	}));
+
+	() @safe { assert(x.map!half.value.approxEqual(61.5)); }();
+	assert(y.map!half.exception == e);
+}
+
+/// Specialization of `map` for `Expected!void`.
+auto map(alias fun, T : void)(Expected!T self)
+	if (is(typeof(fun())))
+{
+	import sumtype: match;
+
+	alias U = typeof(fun());
+
+	return self.data.match!(
+		(self.Void _) => expected(fun()),
+		(Exception err) => unexpected!U(err)
+	);
+}
+
+@system unittest {
+	Exception e = new Exception("oops");
+
+	Expected!void x;
+	Expected!void y = e;
+
+	alias f = function () { return 123; };
+
+	assert(__traits(compiles, () @safe nothrow {
+		x.map!f;
+	}));
+
+	() @safe { assert(x.map!f.value == 123); }();
+	assert(y.map!f.exception == e);
+}
+
+/**
+ * Applies a function to the contained value, if present, and returns the
+ * result, which must be an `Expected` object. If no value is present, returns
+ * an `Expected` object with the contained exception instead.
+ */
+auto andThen(alias fun, T)(Expected!T self)
+	if (is(typeof(fun(self.value)) : Expected!U, U))
+{
+	import sumtype: match;
+
+	return self.data.match!(
+		(T value) => fun(value),
+		(Exception err) => typeof(fun(self.value))(err)
+	);
+}
+
+@system unittest {
+	import std.math: approxEqual;
+	import std.algorithm: equal;
+
+	Exception e = new Exception("oops");
+
+	Expected!int x = 123;
+	Expected!int y = 0;
+	Expected!int z = e;
+
+	Expected!double recip(int n)
+	{
+		if (n == 0) {
+			return unexpected!double(new Exception("Division by zero"));
+		} else {
+			return expected(1.0 / n);
+		}
+	}
+
+	assert(__traits(compiles, () @safe nothrow {
+		x.andThen!recip;
+	}));
+
+	() @safe {
+		assert(x.andThen!recip.value.approxEqual(1.0/123));
+		assert(y.andThen!recip.exception.msg.equal("Division by zero"));
+	}();
+	assert(z.andThen!recip.exception == e);
+}
+
+/// Specialization of `andThen` for `Expected!void`.
+auto andThen(alias fun, T : void)(Expected!T self)
+	if (is(typeof(fun()) : Expected!U, U))
+{
+	import sumtype: match;
+
+	return self.data.match!(
+		(self.Void _) => fun(),
+		(Exception err) => typeof(fun())(err)
+	);
+}
+
+@system unittest {
+	import std.algorithm: equal;
+
+	Exception e = new Exception("oops");
+
+	Expected!void x;
+	Expected!void y = e;
+
+	alias f = function () { return expected(123); };
+	alias g = function () { return unexpected!int(new Exception("oh no")); };
+
+	assert(__traits(compiles, () @safe nothrow {
+		x.andThen!f;
+	}));
+
+	() @safe {
+		assert(x.andThen!f.value == 123);
+		assert(x.andThen!g.exception.msg.equal("oh no"));
+	}();
+	assert(y.andThen!f.exception == e);
 }
