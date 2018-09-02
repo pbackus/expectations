@@ -240,16 +240,15 @@ public:
 }
 
 // value
-@system unittest {
+@safe unittest {
 	import std.exception: collectException;
-
-	Exception e = new Exception("oops");
+	import std.algorithm: equal;
 
 	Expected!int x = 123;
-	Expected!int y = e;
+	Expected!int y = new Exception("oops");
 
-	() @safe { assert(x.value == 123); }();
-	assert(collectException(y.value) == e);
+	assert(x.value == 123);
+	assert(collectException(y.value).msg.equal("oops"));
 }
 
 // exception
@@ -426,16 +425,15 @@ public:
 }
 
 // Expected!void: value
-@system unittest {
+@safe unittest {
 	import std.exception: assertNotThrown, collectException;
-
-	Exception e = new Exception("oops");
+	import std.algorithm: equal;
 
 	Expected!void x;
-	Expected!void y = e;
+	Expected!void y = new Exception("oops");
 
-	() @safe { assertNotThrown(x.value); }();
-	assert(collectException(y.value) == e);
+	assertNotThrown(x.value);
+	assert(collectException(y.value).msg.equal("oops"));
 }
 
 // Expected!void: exception
@@ -513,22 +511,21 @@ auto map(alias fun, T)(Expected!T self)
 	);
 }
 
-@system unittest {
+@safe unittest {
 	import std.math: approxEqual;
-
-	Exception e = new Exception("oops");
+	import std.algorithm: equal;
 
 	Expected!int x = 123;
-	Expected!int y = e;
+	Expected!int y = new Exception("oops");
 
 	double half(int n) { return n / 2.0; }
 
-	assert(__traits(compiles, () @safe nothrow {
+	assert(__traits(compiles, () nothrow {
 		x.map!half;
 	}));
 
-	() @safe { assert(x.map!half.value.approxEqual(61.5)); }();
-	assert(y.map!half.exception == e);
+	assert(x.map!half.value.approxEqual(61.5));
+	assert(y.map!half.exception.msg.equal("oops"));
 }
 
 /// Specialization of `map` for `Expected!void`.
@@ -545,20 +542,20 @@ auto map(alias fun, T : void)(Expected!T self)
 	);
 }
 
-@system unittest {
-	Exception e = new Exception("oops");
+@safe unittest {
+	import std.algorithm: equal;
 
 	Expected!void x;
-	Expected!void y = e;
+	Expected!void y = new Exception("oops");
 
 	alias f = function () { return 123; };
 
-	assert(__traits(compiles, () @safe nothrow {
+	assert(__traits(compiles, () nothrow {
 		x.map!f;
 	}));
 
-	() @safe { assert(x.map!f.value == 123); }();
-	assert(y.map!f.exception == e);
+	assert(x.map!f.value == 123);
+	assert(y.map!f.exception.msg.equal("oops"));
 }
 
 /**
@@ -577,15 +574,13 @@ auto andThen(alias fun, T)(Expected!T self)
 	);
 }
 
-@system unittest {
+@safe unittest {
 	import std.math: approxEqual;
 	import std.algorithm: equal;
 
-	Exception e = new Exception("oops");
-
 	Expected!int x = 123;
 	Expected!int y = 0;
-	Expected!int z = e;
+	Expected!int z = new Exception("oops");
 
 	Expected!double recip(int n)
 	{
@@ -596,15 +591,13 @@ auto andThen(alias fun, T)(Expected!T self)
 		}
 	}
 
-	assert(__traits(compiles, () @safe nothrow {
+	assert(__traits(compiles, () nothrow {
 		x.andThen!recip;
 	}));
 
-	() @safe {
-		assert(x.andThen!recip.value.approxEqual(1.0/123));
-		assert(y.andThen!recip.exception.msg.equal("Division by zero"));
-	}();
-	assert(z.andThen!recip.exception == e);
+	assert(x.andThen!recip.value.approxEqual(1.0/123));
+	assert(y.andThen!recip.exception.msg.equal("Division by zero"));
+	assert(z.andThen!recip.exception.msg.equal("oops"));
 }
 
 /// Specialization of `andThen` for `Expected!void`.
@@ -619,24 +612,20 @@ auto andThen(alias fun, T : void)(Expected!T self)
 	);
 }
 
-@system unittest {
+@safe unittest {
 	import std.algorithm: equal;
 
-	Exception e = new Exception("oops");
-
 	Expected!void x;
-	Expected!void y = e;
+	Expected!void y = new Exception("oops");
 
 	alias f = function () { return expected(123); };
 	alias g = function () { return unexpected!int(new Exception("oh no")); };
 
-	assert(__traits(compiles, () @safe nothrow {
+	assert(__traits(compiles, () nothrow {
 		x.andThen!f;
 	}));
 
-	() @safe {
-		assert(x.andThen!f.value == 123);
-		assert(x.andThen!g.exception.msg.equal("oh no"));
-	}();
-	assert(y.andThen!f.exception == e);
+	assert(x.andThen!f.value == 123);
+	assert(x.andThen!g.exception.msg.equal("oh no"));
+	assert(y.andThen!f.exception.msg.equal("oops"));
 }
