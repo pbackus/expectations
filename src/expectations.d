@@ -34,7 +34,7 @@ module expectations;
 
     assert(!relative(0, 1).hasValue);
     assertThrown(relative(0, 1).value);
-    assert(relative(0, 1).error.msg.equal("Division by zero"));
+    assert(relative(0, 1).exception.msg.equal("Division by zero"));
 }
 
 /**
@@ -141,17 +141,17 @@ public:
 	 */
 	T value()
 	{
-		scope(failure) throw error;
+		scope(failure) throw exception;
 		return data.tryMatch!(
 			(T value) => value,
 		);
 	}
 
 	/**
-	 * Returns the contained error. May only be called when `hasValue` returns
-	 * `false`.
+	 * Returns the contained exception. May only be called when `hasValue`
+	 * returns `false`.
 	 */
-	Exception error()
+	Exception exception()
 	{
 		scope(failure) assert(false);
 		return data.tryMatch!(
@@ -209,13 +209,13 @@ public:
 
 	T value()
 	{
-		scope(failure) throw error;
+		scope(failure) throw exception;
 		data.tryMatch!(
 			(Void _) { return; },
 		);
 	}
 
-	Exception error()
+	Exception exception()
 	{
 		scope(failure) assert(false);
 		return data.tryMatch!(
@@ -302,7 +302,7 @@ public:
 	assert(collectException(y.value) == e);
 }
 
-// error
+// exception
 @system unittest {
 	import std.exception: assertThrown;
 	import core.exception: AssertError;
@@ -312,8 +312,8 @@ public:
 	Expected!int x = 123;
 	Expected!int y = e;
 
-	assertThrown!AssertError(x.error);
-	assert(y.error == e);
+	assertThrown!AssertError(x.exception);
+	assert(y.exception == e);
 }
 
 // Expected!void: construction
@@ -383,7 +383,7 @@ public:
 	assert(collectException(y.value) == e);
 }
 
-// Expected!void: error
+// Expected!void: exception
 @system unittest {
 	import std.exception: assertThrown;
 	import core.exception: AssertError;
@@ -393,8 +393,8 @@ public:
 	Expected!void x;
 	Expected!void y = e;
 
-	assertThrown!AssertError(x.error);
-	assert(y.error == e);
+	assertThrown!AssertError(x.exception);
+	assert(y.exception == e);
 }
 
 /**
