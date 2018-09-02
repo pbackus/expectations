@@ -13,7 +13,7 @@ Author: Paul Backus
 module expectations;
 
 /// $(H3 Basic Usage)
-unittest {
+@safe unittest {
     import std.math: approxEqual;
     import std.exception: assertThrown;
     import std.algorithm: equal;
@@ -225,13 +225,13 @@ public:
 }
 
 // Construction
-unittest {
+@safe unittest {
 	assert(__traits(compiles, Expected!int(123)));
 	assert(__traits(compiles, Expected!int(new Exception("oops"))));
 }
 
 // Assignment
-unittest {
+@safe unittest {
 	Expected!int x;
 
 	assert(__traits(compiles, x = 123));
@@ -239,14 +239,14 @@ unittest {
 }
 
 // Self assignment
-unittest {
+@safe unittest {
 	Expected!int x, y;
 
 	assert(__traits(compiles, x = y));
 }
 
 // Equality with self
-unittest {
+@system unittest {
 	int n = 123;
 	Exception e = new Exception("oops");
 
@@ -262,23 +262,26 @@ unittest {
 }
 
 // Equality with T and Exception
-unittest {
+@system unittest {
 	int n = 123;
 	Exception e = new Exception("oops");
 
 	Expected!int x = n;
 	Expected!int y = e;
 
-	assert(x == n);
-	assert(y == e);
+	() @safe {
+		assert(x == n);
+		assert(y != n);
+		assert(x != 456);
+	}();
+
 	assert(x != e);
-	assert(x != 456);
-	assert(y != n);
+	assert(y == e);
 	assert(y != new Exception("oh no"));
 }
 
 // hasValue
-unittest {
+@safe unittest {
 	Expected!int x = 123;
 	Expected!int y = new Exception("oops");
 
@@ -287,7 +290,7 @@ unittest {
 }
 
 // value
-unittest {
+@system unittest {
 	import std.exception: collectException;
 
 	Exception e = new Exception("oops");
@@ -295,12 +298,12 @@ unittest {
 	Expected!int x = 123;
 	Expected!int y = e;
 
-	assert(x.value == 123);
+	() @safe { assert(x.value == 123); }();
 	assert(collectException(y.value) == e);
 }
 
 // error
-unittest {
+@system unittest {
 	import std.exception: assertThrown;
 	import core.exception: AssertError;
 
@@ -314,27 +317,27 @@ unittest {
 }
 
 // Expected!void: construction
-unittest {
+@safe unittest {
 	assert(__traits(compiles, Expected!void()));
 	assert(__traits(compiles, Expected!void(new Exception("oops"))));
 }
 
 // Expected!void: assignment
-unittest {
+@safe unittest {
 	Expected!void x;
 
 	assert(__traits(compiles, x = new Exception("oops")));
 }
 
 // Expected!void: self-assignment
-unittest {
+@safe unittest {
 	Expected!void x, y;
 
 	assert(__traits(compiles, x = y));
 }
 
 // Expected!void: equality with self
-unittest {
+@system unittest {
 	Exception e = new Exception("oops");
 
 	Expected!void x;
@@ -349,7 +352,7 @@ unittest {
 }
 
 // Expected!void: equality with Exception
-unittest {
+@system unittest {
 	Exception e = new Exception("oops");
 
 	Expected!void x = e;
@@ -359,7 +362,7 @@ unittest {
 }
 
 // Expected!void: hasValue
-unittest {
+@safe unittest {
 	Expected!void x;
 	Expected!void y = new Exception("oops");
 
@@ -368,7 +371,7 @@ unittest {
 }
 
 // Expected!void: value
-unittest {
+@system unittest {
 	import std.exception: assertNotThrown, collectException;
 
 	Exception e = new Exception("oops");
@@ -376,12 +379,12 @@ unittest {
 	Expected!void x;
 	Expected!void y = e;
 
-	assertNotThrown(x.value);
+	() @safe { assertNotThrown(x.value); }();
 	assert(collectException(y.value) == e);
 }
 
 // Expected!void: error
-unittest {
+@system unittest {
 	import std.exception: assertThrown;
 	import core.exception: AssertError;
 
@@ -405,7 +408,7 @@ Expected!T expected(T)(T value)
 	return Expected!T(value);
 }
 
-unittest {
+@safe unittest {
 	assert(__traits(compiles, expected(123)));
 	assert(is(typeof(expected(123)) == Expected!int));
 }
@@ -418,7 +421,7 @@ Expected!T expected(T : void)()
 	return Expected!void();
 }
 
-unittest {
+@safe unittest {
 	assert(__traits(compiles, expected!void));
 	assert(is(typeof({ return expected!void; }()) == Expected!void));
 }
@@ -431,7 +434,7 @@ Expected!T unexpected(T)(Exception err)
 	return Expected!T(err);
 }
 
-unittest {
+@safe unittest {
 	Exception e = new Exception("oops");
 	assert(__traits(compiles, unexpected!int(e)));
 	assert(is(typeof(unexpected!int(e)) == Expected!int));
@@ -453,7 +456,7 @@ T valueOr(T)(Expected!T self, T defaultValue)
 	);
 }
 
-nothrow unittest {
+@safe nothrow unittest {
 	Expected!int x = 123;
 	Expected!int y = new Exception("oops");
 
