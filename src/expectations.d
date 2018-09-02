@@ -172,6 +172,21 @@ public:
 			(Exception _) => defaultValue
 		);
 	}
+
+	/**
+	 * Applies a function to the contained value, if present. Otherwise,
+	 * propagates the contained exception.
+	 */
+	auto map(alias fun)()
+		if (is(typeof(fun(value))))
+	{
+		alias U = typeof(fun(value));
+
+		return data.match!(
+			(T value) => expected(fun(value)),
+			(Exception err) => unexpected!U(err)
+		);
+	}
 }
 
 /// ditto
@@ -235,6 +250,17 @@ public:
 		scope(failure) assert(false);
 		return data.tryMatch!(
 			(Exception err) => err
+		);
+	}
+
+	auto map(alias fun)()
+		if (is(typeof(fun())))
+	{
+		alias U = typeof(fun());
+
+		return data.match!(
+			(Void _) => expected(fun()),
+			(Exception err) => unexpected!U(err)
 		);
 	}
 }
@@ -340,6 +366,25 @@ public:
 	assert(y.valueOr(456) == 456);
 }
 
+// map
+@system unittest {
+	import std.math: approxEqual;
+
+	Exception e = new Exception("oops");
+
+	Expected!int x = 123;
+	Expected!int y = e;
+
+	alias f = (int n) => n / 2.0;
+
+	assert(__traits(compiles, () @safe nothrow {
+		x.map!f;
+	}));
+
+	() @safe { assert(x.map!f.value.approxEqual(61.5)); }();
+	assert(y.map!f.exception == e);
+}
+
 // Expected!void: construction
 @safe nothrow unittest {
 	assert(__traits(compiles, Expected!void()));
@@ -419,6 +464,23 @@ public:
 
 	assertThrown!AssertError(x.exception);
 	assert(y.exception == e);
+}
+
+// Expected!void: map
+@system unittest {
+	Exception e = new Exception("oops");
+
+	Expected!void x;
+	Expected!void y = e;
+
+	alias f = function () { return 123; };
+
+	assert(__traits(compiles, () @safe nothrow {
+		x.map!f;
+	}));
+
+	() @safe { assert(x.map!f.value == 123); }();
+	assert(y.map!f.exception == e);
 }
 
 /**
