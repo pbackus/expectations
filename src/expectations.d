@@ -127,11 +127,11 @@ public:
 	/**
 	 * Checks whether this `Expected!T` contains a `T` value.
 	 */
-	bool hasValue()
+	bool hasValue() const
 	{
 		return data.match!(
-			(T _) => true,
-			(Exception _) => false
+			(const T _) => true,
+			(const Exception _) => false
 		);
 	}
 
@@ -139,11 +139,11 @@ public:
 	 * Returns the contained value if there is one. Otherwise, throws the
 	 * contained exception.
 	 */
-	T value()
+	inout(T) value() inout
 	{
 		scope(failure) throw exception;
 		return data.tryMatch!(
-			(T value) => value,
+			(inout(T) value) => value,
 		);
 	}
 
@@ -151,12 +151,12 @@ public:
 	 * Returns the contained exception. May only be called when `hasValue`
 	 * returns `false`.
 	 */
-	Exception exception()
+	inout(Exception) exception() inout
 		in(!hasValue)
 	{
 		scope(failure) assert(false);
 		return data.tryMatch!(
-			(Exception err) => err
+			(inout(Exception) err) => err
 		);
 	}
 
@@ -165,11 +165,11 @@ public:
 	 *
 	 * Not defined for `Expected!void`.
 	 */
-	T valueOr(T defaultValue)
+	inout(T) valueOr(inout(T) defaultValue) inout
 	{
 		return data.match!(
-			(T value) => value,
-			(Exception _) => defaultValue
+			(inout(T) value) => value,
+			(inout(Exception) _) => defaultValue
 		);
 	}
 }
@@ -274,6 +274,25 @@ public:
 	assert(y.valueOr(456) == 456);
 }
 
+// const(Expected)
+@safe unittest {
+	import std.algorithm: equal;
+
+	const(Expected!int) x = 123;
+	const(Expected!int) y = new Exception("oops");
+
+	// hasValue
+	assert(x.hasValue);
+	assert(!y.hasValue);
+	// value
+	assert(x.value == 123);
+	// exception
+	assert(y.exception.msg.equal("oops"));
+	// valueOr
+	assert(x.valueOr(456) == 123);
+	assert(y.valueOr(456) == 456);
+}
+
 /**
  * Specialization of `Expected` for `void`.
  *
@@ -336,11 +355,11 @@ public:
 	/**
 	 * Checks whether this `Expected!void` contains no exception.
 	 */
-	bool hasValue()
+	bool hasValue() const
 	{
 		return data.match!(
-			(Void _) => true,
-			(Exception _) => false
+			(const Void _) => true,
+			(const Exception _) => false
 		);
 	}
 
@@ -348,11 +367,11 @@ public:
 	 * Returns normally if this `Expected!void` does not contain an exception.
 	 * Otherwise, throws the contained exception.
 	 */
-	T value()
+	inout(T) value() inout
 	{
 		scope(failure) throw exception;
 		data.tryMatch!(
-			(Void _) { return; },
+			(inout(Void) _) { return; },
 		);
 	}
 
@@ -360,12 +379,12 @@ public:
 	 * Returns the contained exception. May only be called when `hasValue`
 	 * returns `false`.
 	 */
-	Exception exception()
+	inout(Exception) exception() inout
 		in(!hasValue)
 	{
 		scope(failure) assert(false);
 		return data.tryMatch!(
-			(Exception err) => err
+			(inout(Exception) err) => err
 		);
 	}
 }
@@ -448,6 +467,23 @@ public:
 
 	assertThrown!AssertError(x.exception);
 	assert(y.exception == e);
+}
+
+// const(Expected!void)
+@safe unittest {
+	import std.algorithm: equal;
+	import std.exception: assertNotThrown;
+
+	const(Expected!void) x;
+	const(Expected!void) y = new Exception("oops");
+
+	// hasValue
+	assert(x.hasValue);
+	assert(!y.hasValue);
+	// value
+	assertNotThrown(x.value);
+	// exception
+	assert(y.exception.msg.equal("oops"));
 }
 
 /**
