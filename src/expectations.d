@@ -341,19 +341,29 @@ Expected!T unexpected(T)(Exception err)
  *
  * If no value is present, the original exception is passed through unchanged.
  *
- * Returns: a new `Expected` object containing the result.
+ * Returns:
+ *   A new `Expected` object containing the result.
  */
-auto map(alias fun, T)(Expected!T self)
-	if (is(typeof(fun(self.value))))
+template map(alias fun)
 {
-	import sumtype: match;
+	/**
+	 * The actual `map` function.
+	 *
+	 * Params:
+	 *   self = an [Expected] object.
+	 */
+	auto map(T)(Expected!T self)
+		if (is(typeof(fun(self.value))))
+	{
+		import sumtype: match;
 
-	alias U = typeof(fun(self.value));
+		alias U = typeof(fun(self.value));
 
-	return self.data.match!(
-		(T value) => expected(fun(value)),
-		(Exception err) => unexpected!U(err)
-	);
+		return self.data.match!(
+			(T value) => expected(fun(value)),
+			(Exception err) => unexpected!U(err)
+		);
+	}
 }
 
 @safe unittest {
@@ -371,6 +381,10 @@ auto map(alias fun, T)(Expected!T self)
 
 	assert(x.map!half.value.approxEqual(61.5));
 	assert(y.map!half.exception.msg.equal("oops"));
+
+	alias mapHalf = map!half;
+
+	assert(mapHalf(Expected!int(123)).value.approxEqual(61.5));
 }
 
 /**
@@ -379,20 +393,30 @@ auto map(alias fun, T)(Expected!T self)
  *
  * If no value is present, the original exception is passed through unchanged.
  *
- * Returns: the `Expected` object returned from the function, or an `Expected`
- * object of the same type containing the original exception.
+ * Returns:
+ *   The `Expected` object returned from the function, or an `Expected` object
+ *   of the same type containing the original exception.
  */
-auto andThen(alias fun, T)(Expected!T self)
-	if (is(typeof(fun(self.value)) : Expected!U, U))
+template andThen(alias fun)
 {
-	import sumtype: match;
+	/**
+	 * The actual `andThen` function.
+	 *
+	 * Params:
+	 *   self = an [Expected] object
+	 */
+	auto andThen(T)(Expected!T self)
+		if (is(typeof(fun(self.value)) : Expected!U, U))
+	{
+		import sumtype: match;
 
-	alias ExpectedU = typeof(fun(self.value));
+		alias ExpectedU = typeof(fun(self.value));
 
-	return self.data.match!(
-		(T value) => fun(value),
-		(Exception err) => ExpectedU(err)
-	);
+		return self.data.match!(
+			(T value) => fun(value),
+			(Exception err) => ExpectedU(err)
+		);
+	}
 }
 
 @safe unittest {
@@ -419,4 +443,8 @@ auto andThen(alias fun, T)(Expected!T self)
 	assert(x.andThen!recip.value.approxEqual(1.0/123));
 	assert(y.andThen!recip.exception.msg.equal("Division by zero"));
 	assert(z.andThen!recip.exception.msg.equal("oops"));
+
+	alias andThenRecip = andThen!recip;
+
+	assert(andThenRecip(Expected!int(123)).value.approxEqual(1.0/123));
 }
