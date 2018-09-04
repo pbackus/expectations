@@ -38,8 +38,32 @@ module expectations;
 }
 
 /**
- * An `Expected!T` is either a `T` or an exception explaining why the `T` couldn't
- * be produced.
+ * An `Expected!T` is either a value of type `T` or an exception explaining why
+ * the value couldn't be produced.
+ *
+ * Instead of either returning a value or throwing an exception, a function
+ * that may fail can return an `Expected` object containing either the value
+ * it would normally have returned, or the exception it would have thrown.
+ *
+ * A function that returns an `Expected` object has the following advantages
+ * over one that either returns a value or throws an exception:
+ *
+ * $(LIST
+ *   * It leaves the choice between manual error checking and automatic stack
+ *     unwinding up to the caller.
+ *   * It allows error handling to be deferred until the return value is
+ *     actually needed.
+ *   * It can be easily composed with other functions using [map] and
+ *     [andThen], which propagate exceptions automatically.
+ *   * It can be used in `nothrow` code.
+ * )
+ *
+ * An `Expected!T` is initialized by default to contain the value `T.init`.
+ *
+ * $(WARNING Because `Expected` uses the presence or absence of a value to
+ * distinguish between success and failure, it should not be used by functions
+ * that can return a value when they fail, or that may fail to return a value
+ * when they succeed.)
  */
 struct Expected(T)
 	if (!is(T == Exception) && !is(T == void))
@@ -119,7 +143,7 @@ public:
 	}
 
 	/**
-	 * Checks whether this `Expected!T` contains a `T` value.
+	 * Checks whether this `Expected!T` contains a value or an exception.
 	 */
 	bool hasValue() const
 	{
@@ -313,9 +337,11 @@ Expected!T unexpected(T)(Exception err)
 }
 
 /**
- * Applies a function to the contained value, if present, and wraps the result
- * in a new `Expected` object. If no value is present, wraps the contained
- * exception in a new `Expected` object instead.
+ * Applies a function to the value in an `Expected!T`.
+ *
+ * If no value is present, the original exception is passed through unchanged.
+ *
+ * Returns: a new `Expected` object containing the result.
  */
 auto map(alias fun, T)(Expected!T self)
 	if (is(typeof(fun(self.value))))
@@ -348,9 +374,13 @@ auto map(alias fun, T)(Expected!T self)
 }
 
 /**
- * Applies a function to the contained value, if present, and returns the
- * result, which must be an `Expected` object. If no value is present, returns
- * an `Expected` object with the contained exception instead.
+ * Forwards the value in an `Expected!T` to a function that returns an
+ * `Expected` result.
+ *
+ * If no value is present, the original exception is passed through unchanged.
+ *
+ * Returns: the `Expected` object returned from the function, or an `Expected`
+ * object of the same type containing the original exception.
  */
 auto andThen(alias fun, T)(Expected!T self)
 	if (is(typeof(fun(self.value)) : Expected!U, U))
