@@ -7,7 +7,6 @@ Features
 --------
 
 - Useable in `@safe` code.
-- Specialized implementation for `Expected!void`.
 - Monadic interface for composing functions that return `Expected` values.
 
 Documentation

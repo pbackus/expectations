@@ -42,7 +42,7 @@ module expectations;
  * be produced.
  */
 struct Expected(T)
-	if (!is(T == Exception))
+	if (!is(T == Exception) && !is(T == void))
 {
 private:
 
@@ -54,8 +54,6 @@ public:
 
 	/**
 	 * Constructs an `Expected!T` with a value.
-	 *
-	 * Not defined for `Expected!void`.
 	 */
 	this(T value)
 	{
@@ -72,8 +70,6 @@ public:
 
 	/**
 	 * Assigns a value to an `Expected!T`.
-	 *
-	 * Not defined for `Expected!void`.
 	 */
 	void opAssign(T value)
 	{
@@ -90,8 +86,6 @@ public:
 
 	/**
 	 * Checks whether this `Expected!T` contains a specific value.
-	 *
-	 * Not defined for `Expected!void`.
 	 */
 	bool opEquals(T rhs)
 	{
@@ -162,8 +156,6 @@ public:
 
 	/**
 	 * Returns the contained value if present, or a default value otherwise.
-	 *
-	 * Not defined for `Expected!void`.
 	 */
 	inout(T) valueOr(inout(T) defaultValue) inout
 	{
@@ -294,205 +286,9 @@ public:
 }
 
 /**
- * Specialization of `Expected` for `void`.
- *
- * Methods of `Expected` that require a value of the expected type
- * are either missing from this specialization, or have been modified to not
- * require such a value. If you are writing generic code that uses `Expected`,
- * you will likely need to treat `Expected!void` as a special case.
- */
-struct Expected(T : void)
-{
-private:
-
-	import sumtype;
-
-	struct Void {}
-
-	SumType!(Void, Exception) data;
-
-public:
-
-	/**
-	 * Constructs an `Expected!void` with an exception.
-	 */
-	this(Exception err)
-	{
-		data = err;
-	}
-
-	/**
-	 * Assigns an exception to an `Expected!void`.
-	 */
-	void opAssign(Exception err)
-	{
-		data = err;
-	}
-
-	/**
-	 * Checks whether this `Expected!void` contains a specific exception.
-	 */
-	bool opEquals(Exception rhs)
-	{
-		return data.match!(
-			(Void _) => false,
-			(Exception err) => err == rhs
-		);
-	}
-
-	/**
-	 * True if this `Expected!void` and `rhs` both contain the same exception,
-	 * or neither contains an exception.
-	 */
-	bool opEquals(Expected!T rhs)
-	{
-		return data.match!(
-			(Void _) => rhs.hasValue,
-			(Exception err) => rhs == err
-		);
-	}
-
-	/**
-	 * Checks whether this `Expected!void` contains no exception.
-	 */
-	bool hasValue() const
-	{
-		return data.match!(
-			(const Void _) => true,
-			(const Exception _) => false
-		);
-	}
-
-	/**
-	 * Returns normally if this `Expected!void` does not contain an exception.
-	 * Otherwise, throws the contained exception.
-	 */
-	inout(T) value() inout
-	{
-		scope(failure) throw exception;
-		data.tryMatch!(
-			(inout(Void) _) { return; },
-		);
-	}
-
-	/**
-	 * Returns the contained exception. May only be called when `hasValue`
-	 * returns `false`.
-	 */
-	inout(Exception) exception() inout
-		in(!hasValue)
-	{
-		scope(failure) assert(false);
-		return data.tryMatch!(
-			(inout(Exception) err) => err
-		);
-	}
-}
-
-// Expected!void: construction
-@safe nothrow unittest {
-	assert(__traits(compiles, Expected!void()));
-	assert(__traits(compiles, Expected!void(new Exception("oops"))));
-}
-
-// Expected!void: assignment
-@safe nothrow unittest {
-	Expected!void x;
-
-	assert(__traits(compiles, x = new Exception("oops")));
-}
-
-// Expected!void: self-assignment
-@safe nothrow unittest {
-	Expected!void x, y;
-
-	assert(__traits(compiles, x = y));
-}
-
-// Expected!void: equality with self
-@system unittest {
-	Exception e = new Exception("oops");
-
-	Expected!void x;
-	Expected!void y;
-	Expected!void z = e;
-	Expected!void w = e;
-
-	assert(x == y);
-	assert(z == w);
-	assert(x != z);
-	assert(z != x);
-}
-
-// Expected!void: equality with Exception
-@system unittest {
-	Exception e = new Exception("oops");
-
-	Expected!void x = e;
-
-	assert(x == e);
-	assert(x != new Exception("oh no"));
-}
-
-// Expected!void: hasValue
-@safe nothrow unittest {
-	Expected!void x;
-	Expected!void y = new Exception("oops");
-
-	assert(x.hasValue);
-	assert(!y.hasValue);
-}
-
-// Expected!void: value
-@safe unittest {
-	import std.exception: assertNotThrown, collectException;
-	import std.algorithm: equal;
-
-	Expected!void x;
-	Expected!void y = new Exception("oops");
-
-	assertNotThrown(x.value);
-	assert(collectException(y.value).msg.equal("oops"));
-}
-
-// Expected!void: exception
-@system unittest {
-	import std.exception: assertThrown;
-	import core.exception: AssertError;
-
-	Exception e = new Exception("oops");
-
-	Expected!void x;
-	Expected!void y = e;
-
-	assertThrown!AssertError(x.exception);
-	assert(y.exception == e);
-}
-
-// const(Expected!void)
-@safe unittest {
-	import std.algorithm: equal;
-	import std.exception: assertNotThrown;
-
-	const(Expected!void) x;
-	const(Expected!void) y = new Exception("oops");
-
-	// hasValue
-	assert(x.hasValue);
-	assert(!y.hasValue);
-	// value
-	assertNotThrown(x.value);
-	// exception
-	assert(y.exception.msg.equal("oops"));
-}
-
-/**
  * Creates an `Expected` object from a value, with type inference.
- *
- * Not defined for `Expected!void`.
  */
 Expected!T expected(T)(T value)
-	if(!is(T == void))
 {
 	return Expected!T(value);
 }
@@ -500,19 +296,6 @@ Expected!T expected(T)(T value)
 @safe nothrow unittest {
 	assert(__traits(compiles, expected(123)));
 	assert(is(typeof(expected(123)) == Expected!int));
-}
-
-/**
- * Creates an `Expected!void` object representing a successful outcome.
- */
-Expected!T expected(T : void)()
-{
-	return Expected!void();
-}
-
-@safe nothrow unittest {
-	assert(__traits(compiles, expected!void));
-	assert(is(typeof({ return expected!void; }()) == Expected!void));
 }
 
 /**
@@ -564,36 +347,6 @@ auto map(alias fun, T)(Expected!T self)
 	assert(y.map!half.exception.msg.equal("oops"));
 }
 
-/// Specialization of `map` for `Expected!void`.
-auto map(alias fun, T : void)(Expected!T self)
-	if (is(typeof(fun())))
-{
-	import sumtype: match;
-
-	alias U = typeof(fun());
-
-	return self.data.match!(
-		(self.Void _) => expected(fun()),
-		(Exception err) => unexpected!U(err)
-	);
-}
-
-@safe unittest {
-	import std.algorithm: equal;
-
-	Expected!void x;
-	Expected!void y = new Exception("oops");
-
-	alias f = function () { return 123; };
-
-	assert(__traits(compiles, () nothrow {
-		x.map!f;
-	}));
-
-	assert(x.map!f.value == 123);
-	assert(y.map!f.exception.msg.equal("oops"));
-}
-
 /**
  * Applies a function to the contained value, if present, and returns the
  * result, which must be an `Expected` object. If no value is present, returns
@@ -636,36 +389,4 @@ auto andThen(alias fun, T)(Expected!T self)
 	assert(x.andThen!recip.value.approxEqual(1.0/123));
 	assert(y.andThen!recip.exception.msg.equal("Division by zero"));
 	assert(z.andThen!recip.exception.msg.equal("oops"));
-}
-
-/// Specialization of `andThen` for `Expected!void`.
-auto andThen(alias fun, T : void)(Expected!T self)
-	if (is(typeof(fun()) : Expected!U, U))
-{
-	import sumtype: match;
-
-	alias ExpectedU = typeof(fun());
-
-	return self.data.match!(
-		(self.Void _) => fun(),
-		(Exception err) => ExpectedU(err)
-	);
-}
-
-@safe unittest {
-	import std.algorithm: equal;
-
-	Expected!void x;
-	Expected!void y = new Exception("oops");
-
-	alias f = function () { return expected(123); };
-	alias g = function () { return unexpected!int(new Exception("oh no")); };
-
-	assert(__traits(compiles, () nothrow {
-		x.andThen!f;
-	}));
-
-	assert(x.andThen!f.value == 123);
-	assert(x.andThen!g.exception.msg.equal("oh no"));
-	assert(y.andThen!f.exception.msg.equal("oops"));
 }
