@@ -62,7 +62,7 @@ module expectations;
  *
  * $(WARNING Because `Expected` uses the presence or absence of a value to
  * distinguish between success and failure, it should not be used by functions
- * that can return a value when they fail, or that may fail to return a value
+ * that may return a value when they fail, or that may fail to return a value
  * when they succeed.)
  */
 struct Expected(T)
@@ -77,7 +77,7 @@ private:
 public:
 
 	/**
-	 * Constructs an `Expected!T` with a value.
+	 * Constructs an `Expected!T` that contains a value.
 	 */
 	this(T value)
 	{
@@ -85,7 +85,7 @@ public:
 	}
 
 	/**
-	 * Constructs an `Expected!T` with an exception.
+	 * Constructs an `Expected!T` that contains an exception.
 	 */
 	this(Exception err)
 	{
