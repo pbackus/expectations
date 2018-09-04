@@ -6,8 +6,13 @@ Error handling that bundles exceptions with return values.
 Features
 --------
 
-- Useable in `@safe` code.
-- Monadic interface for composing functions that return `Expected` values.
+- `Expected` values can be treated like return codes or exceptions:
+    - Use `hasValue` to check for success or failure explicitly.
+    - Use `value` directly to assume success and throw in case of failure.
+- Error handling is deferred until the value is actually needed.
+- Functions that return `Expected` values can be composed easily using
+  `andThen` and `map`.
+- Usable in `@safe` and `nothrow` code.
 
 Documentation
 -------------
