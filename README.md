@@ -59,5 +59,6 @@ If you're using dub, add the
 [expectations](https://code.dlang.org/packages/expectations) package to your
 project as a dependency.
 
-Otherwise, you will need to add both `expectations.d` and `sumtype.d` (from
-[sumtype](https://github.com/pbackus/sumtype)) to your source directory.
+Otherwise, you will need to add both `expectations.d` and its dependency
+`sumtype.d` (from the [sumtype](https://github.com/pbackus/sumtype) package) to
+your source directory.
