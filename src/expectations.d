@@ -172,10 +172,11 @@ public:
 	inout(Exception) exception() inout
 		in(!hasValue)
 	{
-		scope(failure) assert(false);
+		import std.exception: assumeWontThrow;
+
 		return data.tryMatch!(
 			(inout(Exception) err) => err
-		);
+		).assumeWontThrow;
 	}
 
 	/**
