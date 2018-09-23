@@ -60,10 +60,9 @@ module expectations;
  *
  * An `Expected!T` is initialized by default to contain the value `T.init`.
  *
- * $(WARNING Because `Expected` uses the presence or absence of a value to
- * distinguish between success and failure, it should not be used by functions
- * that may return a value when they fail, or that may fail to return a value
- * when they succeed.)
+ * $(B Warning:) `Expected` should not be used for functions whose return
+ * values may be ignored, since this could lead to errors being silently
+ * discarded.
  */
 struct Expected(T)
 	if (!is(T == Exception) && !is(T == void))
