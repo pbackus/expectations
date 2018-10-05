@@ -485,10 +485,11 @@ template andThen(alias fun)
 		import sumtype: match;
 
 		alias ExpectedUE2 = typeof(fun(self.value));
+		alias E2 = typeof(ExpectedUE2.init.exception());
 
 		return self.data.match!(
 			(T value) => fun(value),
-			(E1 err) => ExpectedUE2(err)
+			(E1 err) => ExpectedUE2(cast(E2) err)
 		);
 	}
 }
