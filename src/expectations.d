@@ -21,7 +21,7 @@ module expectations;
     Expected!double relative(double a, double b)
     {
         if (a == 0) {
-            return unexpected!double(
+            return missing!double(
                 new Exception("Division by zero")
             );
         } else {
@@ -38,12 +38,12 @@ module expectations;
 }
 
 /**
- * An exception that represents an unexpected value.
+ * An exception that represents an error value.
  */
 class Unexpected(T) : Exception
 {
 	/**
-	 * The unexpected value.
+	 * The error value.
 	 */
 	T value;
 
@@ -180,9 +180,9 @@ public:
 	 * exception
 	 *
 	 * Throws:
-	 *   If `E` inherits from `Throwable`, the unexpected value is
-	 *   thrown. Otherwise, an [Unexpected] instance containing the unexpected
-	 *   value is thrown.
+	 *   If `E` inherits from `Throwable`, the error value is thrown.
+	 *   Otherwise, an [Unexpected] instance containing the error value is
+	 *   thrown.
 	 */
 	inout(T) value() inout
 	{
@@ -382,21 +382,27 @@ Expected!(T, E) expected(T, E = Exception)(T value)
 /**
  * Creates an `Expected` object from an error value.
  */
-Expected!(T, E) unexpected(T, E)(E err)
+Expected!(T, E) missing(T, E)(E err)
 {
 	return Expected!(T, E)(err);
 }
 
 @safe nothrow unittest {
 	Exception e = new Exception("oops");
-	assert(__traits(compiles, unexpected!int(e)));
-	assert(is(typeof(unexpected!int(e)) == Expected!int));
+	assert(__traits(compiles, missing!int(e)));
+	assert(is(typeof(missing!int(e)) == Expected!int));
 }
 
 @safe nothrow unittest {
-	auto x = unexpected!int("oops");
-	assert(__traits(compiles, unexpected!int("oops")));
-	assert(is(typeof(unexpected!int("oops")) == Expected!(int, string)));
+	auto x = missing!int("oops");
+	assert(__traits(compiles, missing!int("oops")));
+	assert(is(typeof(missing!int("oops")) == Expected!(int, string)));
+}
+
+deprecated("Renamed to `missing`")
+Expected!(T, E) unexpected(T, E)(E err)
+{
+	return missing!T(err);
 }
 
 /**
@@ -425,7 +431,7 @@ template map(alias fun)
 
 		return self.data.match!(
 			(T value) => expected!(U, E)(fun(value)),
-			(E err) => unexpected!U(err)
+			(E err) => missing!U(err)
 		);
 	}
 }
@@ -506,7 +512,7 @@ template andThen(alias fun)
 	Expected!double recip(int n)
 	{
 		if (n == 0) {
-			return unexpected!double(new Exception("Division by zero"));
+			return missing!double(new Exception("Division by zero"));
 		} else {
 			return expected(1.0 / n);
 		}
@@ -536,7 +542,7 @@ template andThen(alias fun)
 	Expected!(double, string) recip(int n)
 	{
 		if (n == 0) {
-			return unexpected!double("Division by zero");
+			return missing!double("Division by zero");
 		} else {
 			return expected!(double, string)(1.0 / n);
 		}
