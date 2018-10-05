@@ -16,7 +16,6 @@ module expectations;
 @safe unittest {
     import std.math: approxEqual;
     import std.exception: assertThrown;
-    import std.algorithm: equal;
 
     Expected!double relative(double a, double b)
     {
@@ -34,7 +33,7 @@ module expectations;
 
     assert(!relative(0, 1).hasValue);
     assertThrown(relative(0, 1).value);
-    assert(relative(0, 1).exception.msg.equal("Division by zero"));
+    assert(relative(0, 1).exception.msg == "Division by zero");
 }
 
 /**
@@ -293,13 +292,12 @@ public:
 // value
 @safe unittest {
 	import std.exception: collectException;
-	import std.algorithm: equal;
 
 	Expected!int x = 123;
 	Expected!int y = new Exception("oops");
 
 	assert(x.value == 123);
-	assert(collectException(y.value).msg.equal("oops"));
+	assert(collectException(y.value).msg == "oops");
 }
 
 // exception
@@ -321,8 +319,6 @@ public:
 
 // const(Expected)
 @safe unittest {
-	import std.algorithm: equal;
-
 	const(Expected!int) x = 123;
 	const(Expected!int) y = new Exception("oops");
 
@@ -332,7 +328,7 @@ public:
 	// value
 	assert(x.value == 123);
 	// exception
-	assert(y.exception.msg.equal("oops"));
+	assert(y.exception.msg == "oops");
 	// valueOr
 	assert(x.valueOr(456) == 123);
 	assert(y.valueOr(456) == 456);
@@ -340,7 +336,6 @@ public:
 
 // Explicit error type
 @safe unittest {
-	import std.algorithm: equal;
 	import std.exception: assertThrown;
 
 	Expected!(int, string) x = 123;
@@ -353,7 +348,7 @@ public:
 	assert(x.value == 123);
 	assertThrown!(Unexpected!string)(y.value);
 	// exception
-	assert(y.exception.equal("oops"));
+	assert(y.exception == "oops");
 	// valueOr
 	assert(x.valueOr(456) == 123);
 	assert(y.valueOr(456) == 456);
@@ -438,7 +433,6 @@ template map(alias fun)
 
 @safe unittest {
 	import std.math: approxEqual;
-	import std.algorithm: equal;
 
 	Expected!int x = 123;
 	Expected!int y = new Exception("oops");
@@ -450,7 +444,7 @@ template map(alias fun)
 	}));
 
 	assert(x.map!half.value.approxEqual(61.5));
-	assert(y.map!half.exception.msg.equal("oops"));
+	assert(y.map!half.exception.msg == "oops");
 
 	alias mapHalf = map!half;
 
@@ -458,13 +452,11 @@ template map(alias fun)
 }
 
 @safe unittest {
-	import std.algorithm: equal;
-
 	Expected!(int, string) x = 123;
 	Expected!(int, string) y = "oops";
 
 	assert(x.map!(n => n*2).value == 246);
-	assert(y.map!(n => n*2).exception.equal("oops"));
+	assert(y.map!(n => n*2).exception == "oops");
 }
 
 /**
@@ -503,7 +495,6 @@ template andThen(alias fun)
 
 @safe unittest {
 	import std.math: approxEqual;
-	import std.algorithm: equal;
 
 	Expected!int x = 123;
 	Expected!int y = 0;
@@ -523,8 +514,8 @@ template andThen(alias fun)
 	}));
 
 	assert(x.andThen!recip.value.approxEqual(1.0/123));
-	assert(y.andThen!recip.exception.msg.equal("Division by zero"));
-	assert(z.andThen!recip.exception.msg.equal("oops"));
+	assert(y.andThen!recip.exception.msg == "Division by zero");
+	assert(z.andThen!recip.exception.msg == "oops");
 
 	alias andThenRecip = andThen!recip;
 
@@ -533,7 +524,6 @@ template andThen(alias fun)
 
 @safe unittest {
 	import std.math: approxEqual;
-	import std.algorithm: equal;
 
 	Expected!(int, string) x = 123;
 	Expected!(int, string) y = 0;
@@ -553,6 +543,6 @@ template andThen(alias fun)
 	}));
 
 	assert(x.andThen!recip.value.approxEqual(1.0/123));
-	assert(y.andThen!recip.exception.equal("Division by zero"));
-	assert(z.andThen!recip.exception.equal("oops"));
+	assert(y.andThen!recip.exception == "Division by zero");
+	assert(z.andThen!recip.exception == "oops");
 }
