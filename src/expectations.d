@@ -269,16 +269,10 @@ public:
 
 // exception
 @system unittest {
-	import std.exception: assertThrown;
-	import core.exception: AssertError;
-
 	Exception e = new Exception("oops");
+	Expected!int x = e;
 
-	Expected!int x = 123;
-	Expected!int y = e;
-
-	assertThrown!AssertError(x.exception);
-	assert(y.exception == e);
+	assert(x.exception == e);
 }
 
 // valueOr
