@@ -38,8 +38,30 @@ module expectations;
 }
 
 /**
- * An `Expected!T` is either a value of type `T` or an exception explaining why
- * the value couldn't be produced.
+ * An exception that represents an unexpected value.
+ */
+class Unexpected(T) : Exception
+{
+	/**
+	 * The unexpected value.
+	 */
+	T value;
+
+	/**
+	 * Constructs an `Unexpected` exception from a value.
+	 */
+	pure @safe @nogc nothrow
+	this(T value, string file = __FILE__, size_t line = __LINE__)
+	{
+		super("unexpected value", file, line);
+		this.value = value;
+	}
+}
+
+/**
+ * An `Expected!(T, E)` is either an expected value of type `T` or an error
+ * value of type `E` explaining why the expected value couldn't be produced.
+ * The default type for `E` is `Exception`.
  *
  * Instead of either returning a value or throwing an exception, a function
  * that may fail can return an `Expected` object containing either the value
@@ -58,25 +80,25 @@ module expectations;
  *   * It can be used in `nothrow` code.
  * )
  *
- * An `Expected!T` is initialized by default to contain the value `T.init`.
+ * An `Expected!(T, E)` is initialized by default to contain the value `T.init`.
  *
  * $(B Warning:) `Expected` should not be used for functions whose return
  * values may be ignored, since this could lead to errors being silently
  * discarded.
  */
-struct Expected(T)
-	if (!is(T == Exception) && !is(T == void))
+struct Expected(T, E = Exception)
+	if (!is(T == E) && !is(T == void))
 {
 private:
 
 	import sumtype;
 
-	SumType!(T, Exception) data;
+	SumType!(T, E) data;
 
 public:
 
 	/**
-	 * Constructs an `Expected!T` that contains a value.
+	 * Constructs an `Expected` object that contains an expected value.
 	 */
 	this(T value)
 	{
@@ -84,15 +106,15 @@ public:
 	}
 
 	/**
-	 * Constructs an `Expected!T` that contains an exception.
+	 * Constructs an `Expected` object that contains an error value.
 	 */
-	this(Exception err)
+	this(E err)
 	{
 		data = err;
 	}
 
 	/**
-	 * Assigns a value to an `Expected!T`.
+	 * Assigns an expected value to an `Expected` object.
 	 */
 	void opAssign(T value)
 	{
@@ -100,65 +122,78 @@ public:
 	}
 
 	/**
-	 * Assigns an exception to an `Expected!T`.
+	 * Assigns an error value to an `Expected` object.
 	 */
-	void opAssign(Exception err)
+	void opAssign(E err)
 	{
 		data = err;
 	}
 
 	/**
-	 * Checks whether this `Expected!T` contains a specific value.
+	 * Checks whether this `Expected` object contains a specific expected value.
 	 */
 	bool opEquals(T rhs)
 	{
 		return data.match!(
 			(T value) => value == rhs,
-			(Exception _) => false
+			(E _) => false
 		);
 	}
 
 	/**
-	 * Checks whether this `Expected!T` contains a specific exception.
+	 * Checks whether this `Expected` object contains a specific error value.
 	 */
-	bool opEquals(Exception rhs)
+	bool opEquals(E rhs)
 	{
 		return data.match!(
 			(T _) => false,
-			(Exception err) => err == rhs
+			(E err) => err == rhs
 		);
 	}
 
 	/**
-	 * Checks whether this `Expected!T` and `rhs` contain the same value or
-	 * exception.
+	 * Checks whether this `Expected` object and `rhs` contain the same expected
+	 * value or error value.
 	 */
-	bool opEquals(Expected!T rhs)
+	bool opEquals(Expected!(T, E) rhs)
 	{
 		return data.match!(
 			(T value) => rhs == value,
-			(Exception err) => rhs == err
+			(E err) => rhs == err
 		);
 	}
 
 	/**
-	 * Checks whether this `Expected!T` contains a value or an exception.
+	 * Checks whether this `Expected` object contains an expected value or an
+	 * error value.
 	 */
 	bool hasValue() const
 	{
 		return data.match!(
 			(const T _) => true,
-			(const Exception _) => false
+			(const E _) => false
 		);
 	}
 
 	/**
-	 * Returns the contained value if there is one. Otherwise, throws the
-	 * contained exception.
+	 * Returns the expected value if there is one. Otherwise, throws an
+	 * exception
+	 *
+	 * Throws:
+	 *   If `E` inherits from `Throwable`, the unexpected value is
+	 *   thrown. Otherwise, an [Unexpected] instance containing the unexpected
+	 *   value is thrown.
 	 */
 	inout(T) value() inout
 	{
-		scope(failure) throw exception;
+		scope(failure) {
+			static if (is(E : Throwable)) {
+				throw exception;
+			} else {
+				throw new Unexpected!E(exception);
+			}
+		}
+
 		return data.tryMatch!(
 			(inout(T) value) => value,
 		);
@@ -168,13 +203,13 @@ public:
 	 * Returns the contained exception. May only be called when `hasValue`
 	 * returns `false`.
 	 */
-	inout(Exception) exception() inout
+	inout(E) exception() inout
 		in(!hasValue)
 	{
 		import std.exception: assumeWontThrow;
 
 		return data.tryMatch!(
-			(inout(Exception) err) => err
+			(inout(E) err) => err
 		).assumeWontThrow;
 	}
 
@@ -185,7 +220,7 @@ public:
 	{
 		return data.match!(
 			(inout(T) value) => value,
-			(inout(Exception) _) => defaultValue
+			(inout(E) _) => defaultValue
 		);
 	}
 }
@@ -303,25 +338,53 @@ public:
 	assert(y.valueOr(456) == 456);
 }
 
+// Explicit error type
+@safe unittest {
+	import std.algorithm: equal;
+	import std.exception: assertThrown;
+
+	Expected!(int, string) x = 123;
+	Expected!(int, string) y = "oops";
+
+	// haValue
+	assert(x.hasValue);
+	assert(!y.hasValue);
+	// value
+	assert(x.value == 123);
+	assertThrown!(Unexpected!string)(y.value);
+	// exception
+	assert(y.exception.equal("oops"));
+	// valueOr
+	assert(x.valueOr(456) == 123);
+	assert(y.valueOr(456) == 456);
+}
+
 /**
  * Creates an `Expected` object from a value, with type inference.
  */
-Expected!T expected(T)(T value)
+Expected!(T, E) expected(T, E = Exception)(T value)
 {
-	return Expected!T(value);
+	return Expected!(T, E)(value);
 }
 
+// Default error type
 @safe nothrow unittest {
 	assert(__traits(compiles, expected(123)));
 	assert(is(typeof(expected(123)) == Expected!int));
 }
 
+// Explicit error type
+@safe nothrow unittest {
+	assert(__traits(compiles, expected!(int, string)(123)));
+	assert(is(typeof(expected!(int, string)(123)) == Expected!(int, string)));
+}
+
 /**
- * Creates an `Expected` object from an exception.
+ * Creates an `Expected` object from an error value.
  */
-Expected!T unexpected(T)(Exception err)
+Expected!(T, E) unexpected(T, E)(E err)
 {
-	return Expected!T(err);
+	return Expected!(T, E)(err);
 }
 
 @safe nothrow unittest {
@@ -330,10 +393,17 @@ Expected!T unexpected(T)(Exception err)
 	assert(is(typeof(unexpected!int(e)) == Expected!int));
 }
 
+@safe nothrow unittest {
+	auto x = unexpected!int("oops");
+	assert(__traits(compiles, unexpected!int("oops")));
+	assert(is(typeof(unexpected!int("oops")) == Expected!(int, string)));
+}
+
 /**
- * Applies a function to the value in an `Expected!T`.
+ * Applies a function to the expected value in an `Expected` object.
  *
- * If no value is present, the original exception is passed through unchanged.
+ * If no expected value is present, the original error value is passed through
+ * unchanged.
  *
  * Returns:
  *   A new `Expected` object containing the result.
@@ -346,7 +416,7 @@ template map(alias fun)
 	 * Params:
 	 *   self = an [Expected] object.
 	 */
-	auto map(T)(Expected!T self)
+	auto map(T, E)(Expected!(T, E) self)
 		if (is(typeof(fun(self.value))))
 	{
 		import sumtype: match;
@@ -354,8 +424,8 @@ template map(alias fun)
 		alias U = typeof(fun(self.value));
 
 		return self.data.match!(
-			(T value) => expected(fun(value)),
-			(Exception err) => unexpected!U(err)
+			(T value) => expected!(U, E)(fun(value)),
+			(E err) => unexpected!U(err)
 		);
 	}
 }
@@ -381,15 +451,26 @@ template map(alias fun)
 	assert(mapHalf(Expected!int(123)).value.approxEqual(61.5));
 }
 
+@safe unittest {
+	import std.algorithm: equal;
+
+	Expected!(int, string) x = 123;
+	Expected!(int, string) y = "oops";
+
+	assert(x.map!(n => n*2).value == 246);
+	assert(y.map!(n => n*2).exception.equal("oops"));
+}
+
 /**
- * Forwards the value in an `Expected!T` to a function that returns an
+ * Forwards the value in an `Expected` object to a function that returns an
  * `Expected` result.
  *
- * If no value is present, the original exception is passed through unchanged.
+ * If no value is present, the original error value is passed through to the
+ * result.
  *
  * Returns:
  *   The `Expected` object returned from the function, or an `Expected` object
- *   of the same type containing the original exception.
+ *   of the same type containing the original error value.
  */
 template andThen(alias fun)
 {
@@ -399,16 +480,17 @@ template andThen(alias fun)
 	 * Params:
 	 *   self = an [Expected] object
 	 */
-	auto andThen(T)(Expected!T self)
-		if (is(typeof(fun(self.value)) : Expected!U, U))
+	auto andThen(T, E1)(Expected!(T, E1) self)
+		if (is(typeof(fun(self.value)) : Expected!(U, E2), U, E2)
+		    && is(E1 : E2))
 	{
 		import sumtype: match;
 
-		alias ExpectedU = typeof(fun(self.value));
+		alias ExpectedUE2 = typeof(fun(self.value));
 
 		return self.data.match!(
 			(T value) => fun(value),
-			(Exception err) => ExpectedU(err)
+			(E1 err) => ExpectedUE2(err)
 		);
 	}
 }
@@ -441,4 +523,30 @@ template andThen(alias fun)
 	alias andThenRecip = andThen!recip;
 
 	assert(andThenRecip(Expected!int(123)).value.approxEqual(1.0/123));
+}
+
+@safe unittest {
+	import std.math: approxEqual;
+	import std.algorithm: equal;
+
+	Expected!(int, string) x = 123;
+	Expected!(int, string) y = 0;
+	Expected!(int, string) z = "oops";
+
+	Expected!(double, string) recip(int n)
+	{
+		if (n == 0) {
+			return unexpected!double("Division by zero");
+		} else {
+			return expected!(double, string)(1.0 / n);
+		}
+	}
+
+	assert(__traits(compiles, () nothrow {
+		x.andThen!recip;
+	}));
+
+	assert(x.andThen!recip.value.approxEqual(1.0/123));
+	assert(y.andThen!recip.exception.equal("Division by zero"));
+	assert(z.andThen!recip.exception.equal("oops"));
 }
