@@ -60,14 +60,11 @@ class Unexpected(T) : Exception
 /**
  * An `Expected!(T, E)` is either an expected value of type `T` or an error
  * value of type `E` explaining why the expected value couldn't be produced.
- * The default type for `E` is `Exception`.
  *
- * Instead of either returning a value or throwing an exception, a function
- * that may fail can return an `Expected` object containing either the value
- * it would normally have returned, or the exception it would have thrown.
+ * The default type for the error value is `Exception`.
  *
  * A function that returns an `Expected` object has the following advantages
- * over one that either returns a value or throws an exception:
+ * over one that may throw an exception or return an error code:
  *
  * $(LIST
  *   * It leaves the choice between manual error checking and automatic stack
@@ -199,8 +196,8 @@ public:
 	}
 
 	/**
-	 * Returns the contained exception. May only be called when `hasValue`
-	 * returns `false`.
+	 * Returns the error value. May only be called when `hasValue` returns
+	 * `false`.
 	 */
 	inout(E) error() inout
 		in(!hasValue)
@@ -219,7 +216,7 @@ public:
 	}
 
 	/**
-	 * Returns the contained value if present, or a default value otherwise.
+	 * Returns the expected value if present, or a default value otherwise.
 	 */
 	inout(T) valueOr(inout(T) defaultValue) inout
 	{
