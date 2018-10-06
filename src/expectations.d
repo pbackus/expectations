@@ -33,7 +33,7 @@ module expectations;
 
     assert(!relative(0, 1).hasValue);
     assertThrown(relative(0, 1).value);
-    assert(relative(0, 1).exception.msg == "Division by zero");
+    assert(relative(0, 1).error.msg == "Division by zero");
 }
 
 /**
@@ -187,9 +187,9 @@ public:
 	{
 		scope(failure) {
 			static if (is(E : Throwable)) {
-				throw exception;
+				throw error;
 			} else {
-				throw new Unexpected!E(exception);
+				throw new Unexpected!E(error);
 			}
 		}
 
@@ -202,7 +202,7 @@ public:
 	 * Returns the contained exception. May only be called when `hasValue`
 	 * returns `false`.
 	 */
-	inout(E) exception() inout
+	inout(E) error() inout
 		in(!hasValue)
 	{
 		import std.exception: assumeWontThrow;
@@ -210,6 +210,12 @@ public:
 		return data.tryMatch!(
 			(inout(E) err) => err
 		).assumeWontThrow;
+	}
+
+	deprecated("Renamed to `error`")
+	inout(E) exception() inout
+	{
+		return error;
 	}
 
 	/**
@@ -300,12 +306,12 @@ public:
 	assert(collectException(y.value).msg == "oops");
 }
 
-// exception
+// error
 @system unittest {
 	Exception e = new Exception("oops");
 	Expected!int x = e;
 
-	assert(x.exception == e);
+	assert(x.error == e);
 }
 
 // valueOr
@@ -327,8 +333,8 @@ public:
 	assert(!y.hasValue);
 	// value
 	assert(x.value == 123);
-	// exception
-	assert(y.exception.msg == "oops");
+	// error
+	assert(y.error.msg == "oops");
 	// valueOr
 	assert(x.valueOr(456) == 123);
 	assert(y.valueOr(456) == 456);
@@ -347,8 +353,8 @@ public:
 	// value
 	assert(x.value == 123);
 	assertThrown!(Unexpected!string)(y.value);
-	// exception
-	assert(y.exception == "oops");
+	// error
+	assert(y.error == "oops");
 	// valueOr
 	assert(x.valueOr(456) == 123);
 	assert(y.valueOr(456) == 456);
@@ -444,7 +450,7 @@ template map(alias fun)
 	}));
 
 	assert(x.map!half.value.approxEqual(61.5));
-	assert(y.map!half.exception.msg == "oops");
+	assert(y.map!half.error.msg == "oops");
 
 	alias mapHalf = map!half;
 
@@ -456,7 +462,7 @@ template map(alias fun)
 	Expected!(int, string) y = "oops";
 
 	assert(x.map!(n => n*2).value == 246);
-	assert(y.map!(n => n*2).exception == "oops");
+	assert(y.map!(n => n*2).error == "oops");
 }
 
 /**
@@ -485,7 +491,7 @@ template andThen(alias fun)
 		import sumtype: match;
 
 		alias ExpectedUE2 = typeof(fun(self.value));
-		alias E2 = typeof(ExpectedUE2.init.exception());
+		alias E2 = typeof(ExpectedUE2.init.error());
 
 		return self.data.match!(
 			(T value) => fun(value),
@@ -515,8 +521,8 @@ template andThen(alias fun)
 	}));
 
 	assert(x.andThen!recip.value.approxEqual(1.0/123));
-	assert(y.andThen!recip.exception.msg == "Division by zero");
-	assert(z.andThen!recip.exception.msg == "oops");
+	assert(y.andThen!recip.error.msg == "Division by zero");
+	assert(z.andThen!recip.error.msg == "oops");
 
 	alias andThenRecip = andThen!recip;
 
@@ -544,6 +550,6 @@ template andThen(alias fun)
 	}));
 
 	assert(x.andThen!recip.value.approxEqual(1.0/123));
-	assert(y.andThen!recip.exception == "Division by zero");
-	assert(z.andThen!recip.exception == "oops");
+	assert(y.andThen!recip.error == "Division by zero");
+	assert(z.andThen!recip.error == "oops");
 }
