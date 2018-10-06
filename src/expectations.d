@@ -200,8 +200,8 @@ public:
 	 * `false`.
 	 */
 	inout(E) error() inout
-		in(!hasValue)
-	{
+		in { assert(!hasValue); }
+	do {
 		import std.exception: assumeWontThrow;
 
 		return data.tryMatch!(
