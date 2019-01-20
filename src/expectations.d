@@ -182,16 +182,15 @@ public:
 	 */
 	inout(T) value() inout
 	{
-		scope(failure) {
-			static if (is(E : Throwable)) {
-				throw error;
-			} else {
-				throw new Unexpected!E(error);
-			}
-		}
-
-		return data.tryMatch!(
+		return data.match!(
 			(inout(T) value) => value,
+			delegate T (inout(E) err) {
+				static if(is(E : Throwable)) {
+					throw error;
+				} else {
+					throw new Unexpected!E(error);
+				}
+			}
 		);
 	}
 
