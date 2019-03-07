@@ -8,5 +8,11 @@
 	},
 	"description": "Error handling that bundles exceptions with return values",
 	"copyright": "Copyright © 2018, Paul Backus",
-	"license": "MIT"
+	"license": "MIT",
+
+	"buildTypes": {
+		"unittest-opt": {
+			"buildOptions": ["unittests", "optimize", "inline"]
+		}
+	}
 }
