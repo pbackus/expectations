@@ -75,7 +75,7 @@ class Unexpected(T) : Exception
  *   * It allows error handling to be deferred until the return value is
  *     actually needed.
  *   * It can be easily composed with other functions using [map] and
- *     [andThen], which propagate exceptions automatically.
+ *     [flatMap], which propagate exceptions automatically.
  *   * It can be used in `nothrow` code.
  * )
  *
@@ -475,15 +475,15 @@ template map(alias fun)
  *   The `Expected` object returned from the function, or an `Expected` object
  *   of the same type containing the original error value.
  */
-template andThen(alias fun)
+template flatMap(alias fun)
 {
 	/**
-	 * The actual `andThen` function.
+	 * The actual `flatMap` function.
 	 *
 	 * Params:
 	 *   self = an [Expected] object
 	 */
-	auto andThen(T, E1)(Expected!(T, E1) self)
+	auto flatMap(T, E1)(Expected!(T, E1) self)
 		if (is(typeof(fun(self.value)) : Expected!(U, E2), U, E2)
 		    && is(E1 : E2))
 	{
@@ -516,16 +516,16 @@ template andThen(alias fun)
 	}
 
 	assert(__traits(compiles, () nothrow {
-		x.andThen!recip;
+		x.flatMap!recip;
 	}));
 
-	assert(x.andThen!recip.value.approxEqual(1.0/123));
-	assert(y.andThen!recip.error.msg == "Division by zero");
-	assert(z.andThen!recip.error.msg == "oops");
+	assert(x.flatMap!recip.value.approxEqual(1.0/123));
+	assert(y.flatMap!recip.error.msg == "Division by zero");
+	assert(z.flatMap!recip.error.msg == "oops");
 
-	alias andThenRecip = andThen!recip;
+	alias flatMapRecip = flatMap!recip;
 
-	assert(andThenRecip(Expected!int(123)).value.approxEqual(1.0/123));
+	assert(flatMapRecip(Expected!int(123)).value.approxEqual(1.0/123));
 }
 
 @safe unittest {
@@ -545,10 +545,16 @@ template andThen(alias fun)
 	}
 
 	assert(__traits(compiles, () nothrow {
-		x.andThen!recip;
+		x.flatMap!recip;
 	}));
 
-	assert(x.andThen!recip.value.approxEqual(1.0/123));
-	assert(y.andThen!recip.error == "Division by zero");
-	assert(z.andThen!recip.error == "oops");
+	assert(x.flatMap!recip.value.approxEqual(1.0/123));
+	assert(y.flatMap!recip.error == "Division by zero");
+	assert(z.flatMap!recip.error == "oops");
+}
+
+deprecated("Renamed to `flatMap`")
+template andThen(alias fun)
+{
+	alias andThen = flatMap!fun;
 }
