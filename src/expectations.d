@@ -28,15 +28,15 @@ module expectations;
         }
     }
 
-    auto valid = charToDigit('7');
-    auto invalid = charToDigit('&');
+    auto goodResult = charToDigit('7');
+    auto badResult = charToDigit('&');
 
-    assert(valid.hasValue);
-    assert(valid.value == 7);
+    assert(goodResult.hasValue);
+    assert(goodResult.value == 7);
 
-    assert(!invalid.hasValue);
-    assertThrown(invalid.value);
-    assert(invalid.error.msg == "& is not a valid digit");
+    assert(!badResult.hasValue);
+    assertThrown(badResult.value);
+    assert(badResult.error.msg == "& is not a valid digit");
 }
 
 /**
