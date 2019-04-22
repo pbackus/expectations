@@ -486,7 +486,7 @@ template flatMap(alias fun)
 	 *   self = an [Expected] object
 	 */
 	auto flatMap(T, E1)(Expected!(T, E1) self)
-		if (is(typeof(fun(self.value)) : Expected!(U, E2), U, E2)
+		if (is(typeof(fun(self.value)) == Expected!(U, E2), U, E2)
 		    && is(E1 : E2))
 	{
 		import sumtype: match;
