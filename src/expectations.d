@@ -61,8 +61,9 @@ class Unexpected(T) : Exception
 }
 
 /**
- * An `Expected!(T, E)` is either an expected value of type `T` or an error
- * value of type `E` explaining why the expected value couldn't be produced.
+ * An `Expected!(T, E)` contains either an expected value of type `T`, or an
+ * error value of type `E` explaining why the expected value couldn't be
+ * produced.
  *
  * The default type for the error value is `Exception`.
  *
@@ -73,17 +74,18 @@ class Unexpected(T) : Exception
  *   * It leaves the choice between manual error checking and automatic stack
  *     unwinding up to the caller.
  *   * It allows error handling to be deferred until the return value is
- *     actually needed.
+ *     actually needed (if ever).
  *   * It can be easily composed with other functions using [map] and
- *     [flatMap], which propagate exceptions automatically.
+ *     [flatMap], which propagates error values automatically.
  *   * It can be used in `nothrow` code.
  * )
  *
  * An `Expected!(T, E)` is initialized by default to contain the value `T.init`.
  *
- * $(B Warning:) `Expected` should not be used for functions whose return
- * values may be ignored, since this could lead to errors being silently
- * discarded.
+ * $(PITFALL Unlike a thrown exception, an error returned via an `Expected`
+ * object will be silently ignored if the function's return value is discarded.
+ * For best results, functions that return `Expected` objects should be marked
+ * as `pure`, so that the D compiler will warn about discarded return values.)
  */
 struct Expected(T, E = Exception)
 	if (!is(T == E) && !is(T == void))
@@ -360,7 +362,7 @@ public:
 }
 
 /**
- * Creates an `Expected` object from a value, with type inference.
+ * Creates an `Expected` object from an expected value, with type inference.
  */
 Expected!(T, E) expected(T, E = Exception)(T value)
 {
@@ -409,7 +411,7 @@ Expected!(T, E) unexpected(T, E)(E err)
  * Applies a function to the expected value in an `Expected` object.
  *
  * If no expected value is present, the original error value is passed through
- * unchanged.
+ * unchanged, and the function is not called.
  *
  * Returns:
  *   A new `Expected` object containing the result.
@@ -465,11 +467,11 @@ template map(alias fun)
 }
 
 /**
- * Forwards the value in an `Expected` object to a function that returns an
- * `Expected` result.
+ * Forwards the expected value in an `Expected` object to a function that
+ * returns an `Expected` result.
  *
- * If no value is present, the original error value is passed through to the
- * result.
+ * If the original `Expected` object contains an error value, it is passed
+ * through to the result, and the function is not called.
  *
  * Returns:
  *   The `Expected` object returned from the function, or an `Expected` object
