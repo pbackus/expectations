@@ -14,26 +14,29 @@ module expectations;
 
 /// $(H3 Basic Usage)
 @safe unittest {
-    import std.math: approxEqual;
     import std.exception: assertThrown;
 
-    Expected!double relative(double a, double b)
+    Expected!int charToDigit(char c)
     {
-        if (a == 0) {
-            return missing!double(
-                new Exception("Division by zero")
-            );
+        int d = c - '0';
+        if (d >= 0 && d < 10) {
+            return expected(d);
         } else {
-            return expected((b - a)/a);
+            return missing!int(
+                new Exception(c ~ " is not a valid digit")
+            );
         }
     }
 
-    assert(relative(2, 3).hasValue);
-    assert(relative(2, 3).value.approxEqual(0.5));
+    auto valid = charToDigit('7');
+    auto invalid = charToDigit('&');
 
-    assert(!relative(0, 1).hasValue);
-    assertThrown(relative(0, 1).value);
-    assert(relative(0, 1).error.msg == "Division by zero");
+    assert(valid.hasValue);
+    assert(valid.value == 7);
+
+    assert(!invalid.hasValue);
+    assertThrown(invalid.value);
+    assert(invalid.error.msg == "& is not a valid digit");
 }
 
 /**
