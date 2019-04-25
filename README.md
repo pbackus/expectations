@@ -30,27 +30,29 @@ copy, run the following command from the root of the `sumtype` repository:
 Example
 -------
 
-    import std.math: approxEqual;
     import std.exception: assertThrown;
-    import std.algorithm: equal;
 
-    Expected!double relative(double a, double b)
+    Expected!int charToDigit(char c)
     {
-        if (a == 0) {
-            return unexpected!double(
-                new Exception("Division by zero")
-            );
+        int d = c - '0';
+        if (d >= 0 && d < 10) {
+            return expected(d);
         } else {
-            return expected((b - a)/a);
+            return missing!int(
+                new Exception(c ~ " is not a valid digit")
+            );
         }
     }
 
-    assert(relative(2, 3).hasValue);
-    assert(relative(2, 3).value.approxEqual(0.5));
+    auto goodResult = charToDigit('7');
+    auto badResult = charToDigit('&');
 
-    assert(!relative(0, 1).hasValue);
-    assertThrown(relative(0, 1).value);
-    assert(relative(0, 1).exception.msg.equal("Division by zero"));
+    assert(goodResult.hasValue);
+    assert(goodResult.value == 7);
+
+    assert(!badResult.hasValue);
+    assertThrown(badResult.value);
+    assert(badResult.error.msg == "& is not a valid digit");
 
 Installation
 ------------
