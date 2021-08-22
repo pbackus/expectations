@@ -439,7 +439,7 @@ template map(alias fun)
 }
 
 @safe unittest {
-	import std.math: approxEqual;
+	import std.math: isClose;
 
 	Expected!int x = 123;
 	Expected!int y = new Exception("oops");
@@ -450,12 +450,12 @@ template map(alias fun)
 		x.map!half;
 	}));
 
-	assert(x.map!half.value.approxEqual(61.5));
+	assert(x.map!half.value.isClose(61.5));
 	assert(y.map!half.error.msg == "oops");
 
 	alias mapHalf = map!half;
 
-	assert(mapHalf(Expected!int(123)).value.approxEqual(61.5));
+	assert(mapHalf(Expected!int(123)).value.isClose(61.5));
 }
 
 @safe unittest {
@@ -502,7 +502,7 @@ template flatMap(alias fun)
 }
 
 @safe unittest {
-	import std.math: approxEqual;
+	import std.math: isClose;
 
 	Expected!int x = 123;
 	Expected!int y = 0;
@@ -521,17 +521,17 @@ template flatMap(alias fun)
 		x.flatMap!recip;
 	}));
 
-	assert(x.flatMap!recip.value.approxEqual(1.0/123));
+	assert(x.flatMap!recip.value.isClose(1.0/123));
 	assert(y.flatMap!recip.error.msg == "Division by zero");
 	assert(z.flatMap!recip.error.msg == "oops");
 
 	alias flatMapRecip = flatMap!recip;
 
-	assert(flatMapRecip(Expected!int(123)).value.approxEqual(1.0/123));
+	assert(flatMapRecip(Expected!int(123)).value.isClose(1.0/123));
 }
 
 @safe unittest {
-	import std.math: approxEqual;
+	import std.math: isClose;
 
 	Expected!(int, string) x = 123;
 	Expected!(int, string) y = 0;
@@ -550,7 +550,7 @@ template flatMap(alias fun)
 		x.flatMap!recip;
 	}));
 
-	assert(x.flatMap!recip.value.approxEqual(1.0/123));
+	assert(x.flatMap!recip.value.isClose(1.0/123));
 	assert(y.flatMap!recip.error == "Division by zero");
 	assert(z.flatMap!recip.error == "oops");
 }
